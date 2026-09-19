@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EDE7D6; --surface: #FFFFFF; --surface-2: #F7F1E3;
+    --accent: #B8863F; --accent-soft: rgba(184,134,63,0.14);
+    --good: #4F8F6D; --good-soft: rgba(79,143,109,0.14);
+    --bad: #B8483B; --bad-soft: rgba(184,72,59,0.14);
+    --text: #1F2937; --text-dim: #6B7280; --border: rgba(31,41,55,0.12);
+    --shadow: 0 1px 2px rgba(31,41,55,0.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12192B; --surface: #1B2440; --surface-2: #212C4C;
+      --accent: #D8B872; --accent-soft: rgba(216,184,114,0.16);
+      --good: #7FC79B; --good-soft: rgba(127,199,155,0.14);
+      --bad: #E07A65; --bad-soft: rgba(224,122,101,0.16);
+      --text: #F2EEE3; --text-dim: #A7B0C8; --border: rgba(242,238,227,0.12);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12192B; --surface: #1B2440; --surface-2: #212C4C;
+    --accent: #D8B872; --accent-soft: rgba(216,184,114,0.16);
+    --good: #7FC79B; --good-soft: rgba(127,199,155,0.14);
+    --bad: #E07A65; --bad-soft: rgba(224,122,101,0.16);
+    --text: #F2EEE3; --text-dim: #A7B0C8; --border: rgba(242,238,227,0.12);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3); color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    overscroll-behavior-y: none;
+  }
+  .num { font-family: 'Spectral', Georgia, serif; }
+
+  #app {
+    max-width: 480px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column; position: relative;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  header.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 4px; }
+  header.top .brand { font-family: 'Spectral', serif; font-size: 20px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer; }
+  header.top .brand:hover { color: var(--accent); }
+  .month-nav { display: flex; align-items: center; gap: 2px; margin-top: 2px; }
+  .month-nav .month { font-size: 13px; color: var(--text-dim); min-width: 108px; text-align: left; }
+  .month-nav .icon-btn.small { padding: 4px 6px; margin: -4px 0; }
+  .month-nav .icon-btn.small svg { width: 14px; height: 14px; }
+  .icon-btn { background: none; border: none; padding: 8px; margin: -8px; color: var(--text-dim); cursor: pointer; line-height: 0; }
+  .icon-btn svg { width: 20px; height: 20px; display: block; }
+
+  nav.tabs { display: flex; gap: 4px; padding: 4px; margin: 14px 20px 8px; background: var(--surface-2); border-radius: 12px; }
+  nav.tabs button {
+    flex: 1; padding: 9px 2px; border: none; background: transparent;
+    font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--text-dim);
+    border-radius: 9px; cursor: pointer; transition: background .15s, color .15s;
+  }
+  nav.tabs button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+
+  main { flex: 1; overflow-y: auto; padding: 4px 20px 100px; }
+
+  .stat-hero { padding: 6px 0 16px; }
+  .stat-hero .amount { font-size: 40px; font-weight: 600; line-height: 1.05; letter-spacing: -0.5px; }
+  .stat-hero .amount.neg { color: var(--bad); }
+  .stat-hero .label { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+  .stat-hero .breakdown { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+  .stat-hero .breakdown div { font-size: 12.5px; color: var(--text-dim); }
+  .stat-hero .breakdown span { display: block; font-family: 'Spectral', serif; font-size: 15px; color: var(--text); font-weight: 600; }
+
+  .bar-track { height: 8px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; background: var(--good); transition: width .25s ease; }
+  .bar-fill.warn { background: var(--accent); }
+  .bar-fill.over { background: var(--bad); }
+
+  .link-btn { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; }
+
+  .section-title { display:flex; justify-content: space-between; align-items:center; font-size: 13px; color: var(--text-dim); margin: 18px 0 8px; }
+  .section-title:first-child { margin-top: 8px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+
+  /* calendar */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow { font-size: 10.5px; color: var(--text-dim); text-align: center; padding-bottom: 4px; }
+  .cal-cell {
+    aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+    position: relative; border: 1.5px solid transparent;
+  }
+  .cal-cell.today { font-weight: 700; }
+  .cal-cell.selected { border-color: var(--accent); }
+  .cal-cell.blank { background: transparent; cursor: default; }
+  .cal-cell.has-spend { color: var(--surface); }
+
+  /* daily category tiles */
+  .tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .cat-tile {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 6px; text-align: center; font-family: inherit; font-size: 12.5px; font-weight: 500;
+    color: var(--text); cursor: pointer; line-height: 1.3; min-height: 56px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cat-tile:active { background: var(--accent-soft); border-color: var(--accent); }
+
+  .day-detail-label { font-size: 13px; font-weight: 500; margin: 16px 0 8px; }
+
+  .tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .tx-row + .tx-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .tx-main { flex: 1; min-width: 0; }
+  .tx-main .note { font-size: 14px; font-weight: 500; }
+  .tx-main .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .tx-amount { font-family: 'Spectral', serif; font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .tx-del { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; padding: 4px 2px; line-height: 1; }
+
+  .cat-row .row-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 8px; cursor: pointer; }
+  .cat-row .name { font-size: 15px; font-weight: 500; }
+  .cat-row .period-tag { font-size: 10.5px; color: var(--text-dim); background: var(--surface-2); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+  .cat-row .figures { font-size: 13px; color: var(--text-dim); white-space:nowrap; }
+  .cat-row .figures b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; font-size: 14px; }
+  .cat-actions { display: flex; gap: 14px; margin-top: 10px; }
+  .cat-entries { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .cat-entries .empty-mini { font-size: 12.5px; color: var(--text-dim); }
+
+  .donut-wrap { display: flex; align-items: center; gap: 18px; }
+  .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .donut-legend .item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-dim); }
+  .donut-legend .swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .donut-legend .item b { color: var(--text); font-weight: 600; margin-left: auto; font-family: 'Spectral', serif; }
+
+  .bill-item + .bill-item { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .bill-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .bill-check {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    color: transparent; font-size: 13px;
+  }
+  .bill-check.paid { background: var(--good); border-color: var(--good); color: var(--surface); }
+  .due-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .due-badge.overdue { background: var(--bad-soft); color: var(--bad); }
+  .due-badge.soon { background: var(--accent-soft); color: var(--accent); }
+  .due-badge.later { background: var(--surface-2); color: var(--text-dim); }
+  .bill-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+  .goal-card .row-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .goal-card .name { font-size: 15px; font-weight: 500; }
+  .goal-card .figures { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+  .goal-card .figures b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; font-size: 14px; }
+  .goal-card .encourage { font-size: 12.5px; color: var(--good); margin-top: 8px; }
+  .goal-card .row-bottom { display:flex; justify-content: space-between; align-items:center; margin-top: 10px; }
+  .goal-card .pct { font-size: 12px; color: var(--text-dim); }
+  .freq-tag { font-size: 10.5px; color: var(--text-dim); background: var(--surface-2); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+
+  .empty { text-align: left; padding: 26px 4px; color: var(--text-dim); font-size: 14px; line-height: 1.5; }
+  .empty b { color: var(--text); }
+  .empty-mini { font-size: 12.5px; color: var(--text-dim); }
+
+  .fab {
+    position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom));
+    max-width: 440px; margin: 0 auto;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--accent); color: var(--surface); border: none;
+    font-size: 26px; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.22); cursor: pointer;
+  }
+
+  .sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 50; opacity: 0; pointer-events: none; transition: opacity .18s;
+  }
+  .sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+  .sheet {
+    background: var(--bg); width: 100%; max-width: 480px;
+    border-radius: 18px 18px 0 0; padding: 18px 20px calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform .22s ease;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .sheet-backdrop.show .sheet { transform: translateY(0); }
+  .sheet h2 { font-family: 'Spectral', serif; font-size: 19px; margin: 4px 0 16px; font-weight: 600; }
+  .sheet .handle { width: 36px; height: 4px; background: var(--border); border-radius: 3px; margin: 0 auto 14px; }
+  .sheet .sub-label { font-size: 13px; color: var(--text-dim); margin: -8px 0 14px; }
+
+  label.field { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 14px; }
+  label.field span { display: block; margin-bottom: 6px; }
+  input, select {
+    width: 100%; padding: 11px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); font-family: inherit; font-size: 15px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .seg { display: flex; gap: 8px; margin-bottom: 14px; }
+  .seg button {
+    flex: 1; padding: 9px 4px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-dim); font-family: inherit; font-size: 13px; cursor: pointer;
+  }
+  .seg button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 500; }
+
+  .btn-primary {
+    width: 100%; padding: 13px; border-radius: 12px; border: none;
+    background: var(--accent); color: var(--surface); font-family: inherit;
+    font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 6px;
+  }
+  .btn-secondary {
+    width: 100%; padding: 13px; border-radius: 12px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim); font-family: inherit;
+    font-size: 14px; cursor: pointer; margin-top: 8px;
+  }
+  .btn-danger-link { display:block; text-align:center; color: var(--bad); font-family: inherit; font-size: 13px; background:none; border:none; cursor:pointer; margin-top: 14px; }
+  .row-inline { display: flex; gap: 10px; }
+  .row-inline > * { flex: 1; }
+
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <div>
+      <div class="brand" id="brandName">Ledger</div>
+      <div class="month-nav">
+        <button class="icon-btn small" id="prevMonthBtn" aria-label="Previous month">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span class="month" id="monthLabel"></span>
+        <button class="icon-btn small" id="nextMonthBtn" aria-label="Next month">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="Edit income">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="daily" class="active">Daily</button>
+    <button data-tab="budget">Budget</button>
+    <button data-tab="bills">Bills</button>
+    <button data-tab="savings">Savings</button>
+  </nav>
+
+  <main id="main"></main>
+
+  <button class="fab" id="fabBtn" aria-label="Add">+</button>
+</div>
+
+<!-- Quick log-expense sheet (category preset by the tapped tile) -->
+<div class="sheet-backdrop" id="txBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Log an expense</h2>
+    <div class="sub-label" id="txCatLabel"></div>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="txAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Note (optional)</span>
+      <input type="text" id="txNote" placeholder="e.g. Save-On Foods">
+    </label>
+    <label class="field"><span>Date</span>
+      <input type="date" id="txDate">
+    </label>
+    <button class="btn-primary" id="txSave">Save expense</button>
+    <button class="btn-secondary" id="txCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Manage daily categories (add / delete) -->
+<div class="sheet-backdrop" id="dailyCatBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Manage categories</h2>
+    <div id="dailyCatList"></div>
+    <label class="field"><span>New category name</span>
+      <input type="text" id="newDailyCatName" placeholder="e.g. Coffee">
+    </label>
+    <button class="btn-primary" id="addDailyCatBtn">Add category</button>
+    <button class="btn-secondary" id="dailyCatDone">Done</button>
+  </div>
+</div>
+
+<!-- Add/edit budget category sheet -->
+<div class="sheet-backdrop" id="catBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="catSheetTitle">New budget category</h2>
+    <label class="field"><span>Name</span>
+      <input type="text" id="catName" placeholder="e.g. Groceries">
+    </label>
+    <label class="field"><span>Budget amount</span>
+      <input type="number" id="catBudget" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Resets</span>
+      <div class="seg" id="catPeriodSeg">
+        <button type="button" data-period="weekly">Weekly</button>
+        <button type="button" data-period="monthly">Monthly</button>
+      </div>
+    </label>
+    <button class="btn-primary" id="catSave">Save category</button>
+    <button class="btn-secondary" id="catCancel">Cancel</button>
+    <button class="btn-danger-link" id="catDelete" style="display:none;">Delete category</button>
+  </div>
+</div>
+
+<!-- Add a manual budget spend item -->
+<div class="sheet-backdrop" id="spendBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Log a spend item</h2>
+    <div class="sub-label" id="spendCatLabel"></div>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="spendAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Note (optional)</span>
+      <input type="text" id="spendNote" placeholder="e.g. Weekly shop">
+    </label>
+    <label class="field"><span>Date</span>
+      <input type="date" id="spendDate">
+    </label>
+    <button class="btn-primary" id="spendSave">Save spend item</button>
+    <button class="btn-secondary" id="spendCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Add bill sheet -->
+<div class="sheet-backdrop" id="billBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Add a bill</h2>
+    <label class="field"><span>Name</span>
+      <input type="text" id="billName" placeholder="e.g. Internet">
+    </label>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="billAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Next due date</span>
+      <input type="date" id="billDue">
+    </label>
+    <label class="field"><span>Repeats</span>
+      <div class="seg" id="billRepeatSeg">
+        <button type="button" data-repeat="none">One-time</button>
+        <button type="button" data-repeat="weekly">Weekly</button>
+        <button type="button" data-repeat="monthly">Monthly</button>
+      </div>
+    </label>
+    <button class="btn-primary" id="billSave">Save bill</button>
+    <button class="btn-secondary" id="billCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Add a bill's amount into the Budget tab's spent totals -->
+<div class="sheet-backdrop" id="billBudgetBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Add to budget spend</h2>
+    <div class="sub-label" id="billBudgetLabel"></div>
+    <label class="field"><span>Budget category</span>
+      <select id="billBudgetCategory"></select>
+    </label>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="billBudgetAmount" inputmode="decimal" step="0.01">
+    </label>
+    <label class="field"><span>Date</span>
+      <input type="date" id="billBudgetDate">
+    </label>
+    <button class="btn-primary" id="billBudgetSave">Add to budget</button>
+    <button class="btn-secondary" id="billBudgetCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Income sheet -->
+<div class="sheet-backdrop" id="incomeBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Monthly income</h2>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="incomeInput" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <button class="btn-primary" id="incomeSave">Save</button>
+    <button class="btn-secondary" id="incomeCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Rename ledger sheet -->
+<div class="sheet-backdrop" id="renameBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Rename your ledger</h2>
+    <label class="field"><span>Name</span>
+      <input type="text" id="renameInput" placeholder="Ledger" maxlength="30">
+    </label>
+    <button class="btn-primary" id="renameSave">Save</button>
+    <button class="btn-secondary" id="renameCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- New savings goal sheet -->
+<div class="sheet-backdrop" id="goalBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>New savings goal</h2>
+    <label class="field"><span>What are you saving for</span>
+      <input type="text" id="goalName" placeholder="e.g. Emergency fund">
+    </label>
+    <label class="field"><span>Target amount</span>
+      <input type="number" id="goalTarget" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>How often do you want to save toward this</span>
+      <div class="seg" id="goalFreqSeg">
+        <button type="button" data-freq="weekly">Weekly</button>
+        <button type="button" data-freq="biweekly">Biweekly</button>
+        <button type="button" data-freq="monthly">Monthly</button>
+      </div>
+    </label>
+    <label class="field"><span>Target date (optional)</span>
+      <input type="date" id="goalDate">
+    </label>
+    <button class="btn-primary" id="goalSave">Create goal</button>
+    <button class="btn-secondary" id="goalCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Add contribution sheet -->
+<div class="sheet-backdrop" id="contribBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Add to savings</h2>
+    <label class="field"><span>Goal</span>
+      <select id="contribGoal"></select>
+    </label>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="contribAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <button class="btn-primary" id="contribSave">Add contribution</button>
+    <button class="btn-secondary" id="contribCancel">Cancel</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORE_KEY = 'ledger-app-data-v4';
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW = ['S','M','T','W','T','F','S'];
+  const PALETTE = ['#B8863F','#4F8F6D','#5B7FA6','#B8483B','#8A6BAE','#4C9A9A'];
+  const FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Biweekly', monthly: 'Monthly' };
+
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function monthKeyOf(dateStr){ return dateStr.slice(0,7); }
+  function fmt(n){
+    const neg = n < 0;
+    const v = Math.abs(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    return (neg?'-':'') + '$' + v;
+  }
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+  function isoAdd(iso, days){
+    const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+days);
+    return d.toISOString().slice(0,10);
+  }
+  function isoAddMonths(iso, months){
+    const d = new Date(iso+'T00:00:00'); d.setMonth(d.getMonth()+months);
+    return d.toISOString().slice(0,10);
+  }
+  function weekRange(iso){
+    const d = new Date(iso+'T00:00:00');
+    const dow = d.getDay();
+    const start = new Date(d); start.setDate(d.getDate()-dow);
+    const end = new Date(start); end.setDate(start.getDate()+6);
+    return [start.toISOString().slice(0,10), end.toISOString().slice(0,10)];
+  }
+  function daysBetween(a,b){
+    return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000);
+  }
+
+  let state = null;
+  function defaultState(){
+    return { ledgerName: 'Ledger', income: 0, dailyCategories: [], budgetCategories: [], expenses: [], budgetSpends: [], bills: [], savingsGoals: [] };
+  }
+  function load(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      state = raw ? JSON.parse(raw) : defaultState();
+    } catch(e) {
+      console.error('Ledger: failed to load, starting fresh', e);
+      state = defaultState();
+    }
+    if (!state.ledgerName) state.ledgerName = 'Ledger';
+    // migrate from the earlier single shared category list, if present
+    if (!state.dailyCategories && !state.budgetCategories && Array.isArray(state.categories)) {
+      state.budgetCategories = state.categories.map(c => ({ id: c.id, name: c.name, budget: c.budget||0, period: c.period||'monthly' }));
+      state.dailyCategories = state.categories.map(c => ({ id: c.id, name: c.name }));
+      delete state.categories;
+    }
+    if (!state.dailyCategories) state.dailyCategories = [];
+    if (!state.budgetCategories) state.budgetCategories = [];
+    if (!state.expenses) state.expenses = [];
+    if (!state.budgetSpends) state.budgetSpends = [];
+    if (!state.bills) state.bills = [];
+    if (!state.savingsGoals) state.savingsGoals = [];
+    if (typeof state.income !== 'number') state.income = 0;
+    state.savingsGoals.forEach(g => { if (!g.frequency) g.frequency = 'weekly'; });
+  }
+  function save(){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    catch(e) { console.error('Ledger: failed to save', e); }
+  }
+
+  // ---------- month navigation (past / future) ----------
+  let viewOffset = 0; // months relative to the real current month
+  function viewMonthDate(){
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + viewOffset, 1);
+  }
+  function viewMonthKey(){
+    const d = viewMonthDate();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  function isViewingCurrentMonth(){ return viewOffset === 0; }
+
+  // ---------- computed helpers ----------
+  function monthExpenses(){
+    const mk = viewMonthKey();
+    return state.expenses.filter(t => monthKeyOf(t.date) === mk);
+  }
+  function totalMonthSpent(){ return monthExpenses().reduce((s,t)=>s+t.amount,0); }
+
+  // Budget-tab spend items are entirely separate from the Daily expense log.
+  function monthBudgetSpends(){
+    const mk = viewMonthKey();
+    return state.budgetSpends.filter(e => monthKeyOf(e.date) === mk);
+  }
+  function totalBudgetSpendForMonth(){ return monthBudgetSpends().reduce((s,e)=>s+e.amount,0); }
+  function categorySpendEntries(cat){
+    return state.budgetSpends.filter(e => e.categoryId === cat.id).sort((a,b)=> b.date.localeCompare(a.date));
+  }
+  function categorySpentInPeriod(cat){
+    if (cat.period === 'weekly') {
+      const range = weekRange(todayISO());
+      return state.budgetSpends
+        .filter(e => e.categoryId === cat.id && e.date >= range[0] && e.date <= range[1])
+        .reduce((s,e)=>s+e.amount,0);
+    }
+    const mk = viewMonthKey();
+    return state.budgetSpends
+      .filter(e => e.categoryId === cat.id && monthKeyOf(e.date) === mk)
+      .reduce((s,e)=>s+e.amount,0);
+  }
+  function categoryMonthlyEquivalent(cat){
+    return cat.period === 'weekly' ? cat.budget * 4.345 : cat.budget;
+  }
+  function totalBudgeted(){ return state.budgetCategories.reduce((s,c)=>s+categoryMonthlyEquivalent(c),0); }
+
+  function nextBillDueLabel(bill){
+    const diff = daysBetween(todayISO(), bill.dueDate);
+    if (diff < 0) return {cls:'overdue', text: 'Overdue'};
+    if (diff === 0) return {cls:'soon', text: 'Due today'};
+    if (diff <= 3) return {cls:'soon', text: 'Due in ' + diff + 'd'};
+    return {cls:'later', text: new Date(bill.dueDate+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric'})};
+  }
+  function markBillPaid(bill){
+    if (bill.repeat === 'weekly') bill.dueDate = isoAdd(bill.dueDate, 7);
+    else if (bill.repeat === 'monthly') bill.dueDate = isoAddMonths(bill.dueDate, 1);
+    else bill.paidOnce = true;
+  }
+
+  function goalSaved(goal){ return (goal.contributions||[]).reduce((s,c)=>s+c.amount,0); }
+  function goalSuggestion(goal){
+    if (!goal.targetDate) return null;
+    const daysLeft = daysBetween(todayISO(), goal.targetDate);
+    if (daysLeft <= 0) return null;
+    const remaining = goal.target - goalSaved(goal);
+    if (remaining <= 0) return null;
+    const freq = goal.frequency || 'weekly';
+    let periods, label;
+    if (freq === 'biweekly') { periods = Math.max(1, Math.round(daysLeft/14)); label = 'every two weeks'; }
+    else if (freq === 'monthly') { periods = Math.max(1, Math.round(daysLeft/30.44)); label = 'a month'; }
+    else { periods = Math.max(1, Math.round(daysLeft/7)); label = 'a week'; }
+    return fmt(remaining/periods) + ' ' + label + ' gets you there';
+  }
+  function goalEncouragement(pct){
+    if (pct >= 100) return "Goal reached — amazing work.";
+    if (pct >= 75) return "So close, keep going.";
+    if (pct >= 40) return "Solid progress — you've got this.";
+    if (pct > 0) return "Every bit counts. Nice start.";
+    return "Add your first contribution when you're ready.";
+  }
+
+  // ---------- state for UI ----------
+  let activeTab = 'daily';
+  let selectedDate = todayISO();
+  let expandedCatId = null;
+
+  // ---------- rendering ----------
+  function renderDaily(){
+    const vd = viewMonthDate();
+    const y = vd.getFullYear(), m = vd.getMonth();
+    const dim = daysInMonth(y,m);
+    const firstDow = new Date(y,m,1).getDay();
+    const spendByDay = {};
+    monthExpenses().forEach(t => { spendByDay[t.date] = (spendByDay[t.date]||0) + t.amount; });
+    const maxSpend = Math.max(1, ...Object.values(spendByDay));
+
+    let cal = `<div class="card"><div class="cal-grid">`;
+    DOW.forEach(d => cal += `<div class="cal-dow">${d}</div>`);
+    for (let i=0;i<firstDow;i++) cal += `<div class="cal-cell blank"></div>`;
+    for (let day=1; day<=dim; day++){
+      const iso = y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      const spend = spendByDay[iso] || 0;
+      let style = '';
+      let cls = 'cal-cell';
+      if (iso === todayISO()) cls += ' today';
+      if (iso === selectedDate) cls += ' selected';
+      if (spend > 0) {
+        cls += ' has-spend';
+        const ratio = Math.min(1, spend / maxSpend);
+        const opacity = 0.35 + ratio*0.65;
+        style = `style="background: color-mix(in srgb, var(--accent) ${Math.round(opacity*100)}%, var(--surface-2));"`;
+      }
+      cal += `<div class="${cls}" ${style} data-day="${iso}">${day}</div>`;
+    }
+    cal += `</div></div>`;
+
+    const spentThisMonth = totalMonthSpent();
+    const heroLabel = isViewingCurrentMonth() ? 'spent so far this month' : 'spent that month';
+    let html = `
+      <div class="stat-hero">
+        <div class="amount num">${fmt(spentThisMonth)}</div>
+        <div class="label">${heroLabel}</div>
+      </div>` + cal;
+
+    html += `<div class="section-title"><span>Log an expense</span><button class="link-btn" id="manageDailyCatsLink">Manage</button></div>`;
+    if (state.dailyCategories.length === 0) {
+      html += `<div class="empty"><b>No categories yet.</b><br>Tap "Manage" to add categories like Groceries or Coffee, then tap one to log a spend against it.</div>`;
+    } else {
+      html += `<div class="tile-grid">`;
+      state.dailyCategories.forEach(c => {
+        html += `<button type="button" class="cat-tile" data-log-cat="${c.id}">${escapeHtml(c.name)}</button>`;
+      });
+      html += `</div>`;
+    }
+
+    const dayTxs = state.expenses.filter(t => t.date === selectedDate).sort((a,b)=> a.note?.localeCompare(b.note||'')||0);
+    const dayLabel = selectedDate === todayISO() ? 'Today' : new Date(selectedDate+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric', year:'numeric'});
+    html += `<div class="day-detail-label">${dayLabel}</div>`;
+    if (dayTxs.length === 0) {
+      html += `<div class="empty"><b>Nothing logged for this day.</b><br>Tap a category above to add an expense.</div>`;
+    } else {
+      html += `<div class="card">`;
+      dayTxs.forEach(t => {
+        const cat = state.dailyCategories.find(c => c.id === t.categoryId);
+        html += `
+          <div class="tx-row">
+            <div class="tx-main">
+              <div class="note">${escapeHtml(t.note || (cat?cat.name:'Expense'))}</div>
+              ${cat ? `<div class="meta">${escapeHtml(cat.name)}</div>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="tx-amount">${fmt(t.amount)}</div>
+              <button class="tx-del" data-del-tx="${t.id}" aria-label="Delete">&times;</button>
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+    }
+    return html;
+  }
+
+  function renderBudget(){
+    const income = state.income;
+    const spent = totalBudgetSpendForMonth();
+    const budgeted = totalBudgeted();
+    const net = income - spent;
+    const heroLabel = isViewingCurrentMonth() ? 'left over this month' : 'left over that month';
+    let html = `
+      <div class="stat-hero">
+        <div class="amount num ${net<0?'neg':''}">${fmt(net)}</div>
+        <div class="label">${net<0?(isViewingCurrentMonth()?'over budget this month':'over budget that month'):heroLabel}</div>
+        <div class="breakdown">
+          <div>Income<span>${fmt(income)}</span></div>
+          <div>Budgeted<span>${fmt(budgeted)}</span></div>
+          <div>Spent<span>${fmt(spent)}</span></div>
+        </div>
+      </div>
+      <button class="link-btn" id="editIncomeLink">Edit monthly income</button>
+    `;
+
+    if (state.budgetCategories.length === 0) {
+      html += `<div class="empty" style="margin-top:18px;"><b>No budget categories yet.</b><br>Tap the + button to create one, like Groceries or Transport, with a weekly or monthly limit. These are separate from your Daily tab categories — this tab is your summary view.</div>`;
+      return html;
+    }
+
+    // donut of this month's manual spend items by category
+    const spendByCat = state.budgetCategories.map(c => ({ c, spent: monthBudgetSpends().filter(e=>e.categoryId===c.id).reduce((s,e)=>s+e.amount,0) }))
+      .filter(x => x.spent > 0);
+    if (spendByCat.length > 0) {
+      const totalSpendForDonut = spendByCat.reduce((s,x)=>s+x.spent,0);
+      let offset = 0;
+      const R = 40, C = 2*Math.PI*R;
+      let circles = '';
+      spendByCat.forEach((x,i) => {
+        const frac = x.spent/totalSpendForDonut;
+        const len = frac*C;
+        circles += `<circle r="${R}" cx="50" cy="50" fill="none" stroke="${PALETTE[i%PALETTE.length]}" stroke-width="14" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)"/>`;
+        offset += len;
+      });
+      html += `<div class="card"><div class="donut-wrap">
+        <svg width="100" height="100" viewBox="0 0 100 100">${circles}</svg>
+        <div class="donut-legend">`;
+      spendByCat.forEach((x,i) => {
+        html += `<div class="item"><span class="swatch" style="background:${PALETTE[i%PALETTE.length]}"></span>${escapeHtml(x.c.name)}<b>${fmt(x.spent)}</b></div>`;
+      });
+      html += `</div></div></div>`;
+    }
+
+    html += `<div class="section-title"><span>Categories</span></div>`;
+    state.budgetCategories.forEach(c => {
+      const spentP = categorySpentInPeriod(c);
+      const pct = c.budget > 0 ? Math.min(100, (spentP/c.budget)*100) : (spentP>0?100:0);
+      let cls = '';
+      if (c.budget > 0 && spentP > c.budget) cls = 'over';
+      else if (c.budget > 0 && spentP/c.budget >= 0.8) cls = 'warn';
+      const entries = categorySpendEntries(c);
+      const expanded = expandedCatId === c.id;
+      html += `
+        <div class="card cat-row">
+          <div class="row-top" data-edit-cat="${c.id}">
+            <div class="name">${escapeHtml(c.name)}<span class="period-tag">${c.period}</span></div>
+            <div class="figures"><b>${fmt(spentP)}</b> / ${fmt(c.budget)}</div>
+          </div>
+          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+          <div class="cat-actions">
+            <button class="link-btn" data-add-spend="${c.id}">+ Add spend</button>
+            <button class="link-btn" data-toggle-entries="${c.id}">${expanded ? 'Hide entries' : 'View entries (' + entries.length + ')'}</button>
+          </div>`;
+      if (expanded) {
+        html += `<div class="cat-entries">`;
+        if (entries.length === 0) {
+          html += `<div class="empty-mini">No spend items logged for this category yet.</div>`;
+        } else {
+          entries.forEach(e => {
+            html += `
+              <div class="tx-row">
+                <div class="tx-main">
+                  <div class="note">${escapeHtml(e.note || 'Spend item')}</div>
+                  <div class="meta">${new Date(e.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="tx-amount">${fmt(e.amount)}</div>
+                  <button class="tx-del" data-del-spend="${e.id}" aria-label="Delete">&times;</button>
+                </div>
+              </div>`;
+          });
+        }
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+    return html;
+  }
+
+  function renderBills(){
+    if (state.bills.length === 0) {
+      return `<div class="empty"><b>No bills set up.</b><br>Tap the + button to add a recurring bill like rent or a subscription.</div>`;
+    }
+    let html = `<div class="card">`;
+    state.bills.slice().sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).forEach(b => {
+      const badge = nextBillDueLabel(b);
+      const checked = b.repeat === 'none' && b.paidOnce;
+      html += `
+        <div class="bill-item">
+          <div class="bill-row">
+            <div class="bill-check ${checked ? 'paid' : ''}" data-toggle-bill="${b.id}">${checked ? '✓' : ''}</div>
+            <div class="tx-main">
+              <div class="note">${escapeHtml(b.name)}</div>
+              <div class="meta">${b.repeat === 'none' ? 'One-time' : b.repeat.charAt(0).toUpperCase()+b.repeat.slice(1)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="tx-amount">${fmt(b.amount)}</div>
+              <div class="due-badge ${badge.cls}">${badge.text}</div>
+            </div>
+            <button class="tx-del" data-del-bill="${b.id}" aria-label="Delete">&times;</button>
+          </div>
+          <div class="bill-actions">
+            <button class="link-btn" data-add-bill-budget="${b.id}">+ Add to Budget</button>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+    return html;
+  }
+
+  function renderSavings(){
+    let html = `<div class="section-title"><span>Your savings goals</span><button class="link-btn" id="newGoalLink">+ New goal</button></div>`;
+    if (state.savingsGoals.length === 0) {
+      html += `<div class="empty"><b>No savings goals yet.</b><br>Create one — a fund, a trip, anything you're working toward — and watch your progress grow.</div>`;
+      return html;
+    }
+    state.savingsGoals.forEach(g => {
+      const saved = goalSaved(g);
+      const pct = g.target > 0 ? Math.min(100, (saved/g.target)*100) : 0;
+      const suggestion = goalSuggestion(g);
+      html += `
+        <div class="card goal-card">
+          <div class="row-top">
+            <div class="name">${escapeHtml(g.name)}<span class="freq-tag">${FREQ_LABEL[g.frequency || 'weekly']}</span></div>
+            <button class="tx-del" data-del-goal="${g.id}" aria-label="Delete">&times;</button>
+          </div>
+          <div class="figures"><b>${fmt(saved)}</b> of ${fmt(g.target)}${g.targetDate ? ' by ' + new Date(g.targetDate+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) : ''}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="row-bottom">
+            <div class="pct">${pct.toFixed(0)}% there</div>
+            <button class="link-btn" data-add-contrib="${g.id}">+ Add</button>
+          </div>
+          <div class="encourage">${suggestion || goalEncouragement(pct)}</div>
+        </div>`;
+    });
+    return html;
+  }
+
+  function render(){
+    document.getElementById('brandName').textContent = state.ledgerName;
+    document.title = state.ledgerName;
+    const vd = viewMonthDate();
+    let label = MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear();
+    document.getElementById('monthLabel').textContent = label;
+    const main = document.getElementById('main');
+    if (activeTab === 'daily') main.innerHTML = renderDaily();
+    else if (activeTab === 'budget') main.innerHTML = renderBudget();
+    else if (activeTab === 'bills') main.innerHTML = renderBills();
+    else main.innerHTML = renderSavings();
+    attachDynamicListeners();
+  }
+
+  function attachDynamicListeners(){
+    document.querySelectorAll('[data-day]').forEach(el => {
+      el.addEventListener('click', () => { selectedDate = el.dataset.day; render(); });
+    });
+    document.querySelectorAll('[data-log-cat]').forEach(btn => {
+      btn.addEventListener('click', () => openTxSheet(btn.dataset.logCat));
+    });
+    document.querySelectorAll('[data-del-tx]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.expenses = state.expenses.filter(t => t.id !== btn.dataset.delTx);
+        save(); render();
+      });
+    });
+    document.querySelectorAll('[data-del-bill]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.bills = state.bills.filter(b => b.id !== btn.dataset.delBill);
+        save(); render();
+      });
+    });
+    document.querySelectorAll('[data-toggle-bill]').forEach(el => {
+      el.addEventListener('click', () => {
+        const bill = state.bills.find(b => b.id === el.dataset.toggleBill);
+        if (!bill) return;
+        if (bill.repeat === 'none') bill.paidOnce = !bill.paidOnce;
+        else markBillPaid(bill);
+        save(); render();
+      });
+    });
+    document.querySelectorAll('[data-add-bill-budget]').forEach(btn => {
+      btn.addEventListener('click', () => openBillBudgetSheet(btn.dataset.addBillBudget));
+    });
+    document.querySelectorAll('[data-del-goal]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.savingsGoals = state.savingsGoals.filter(g => g.id !== btn.dataset.delGoal);
+        save(); render();
+      });
+    });
+    document.querySelectorAll('[data-add-contrib]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openContribSheet(btn.dataset.addContrib); });
+    });
+    document.querySelectorAll('[data-edit-cat]').forEach(el => {
+      el.addEventListener('click', () => openCatSheet(el.dataset.editCat));
+    });
+    document.querySelectorAll('[data-add-spend]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openSpendSheet(btn.dataset.addSpend); });
+    });
+    document.querySelectorAll('[data-toggle-entries]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.toggleEntries;
+        expandedCatId = (expandedCatId === id) ? null : id;
+        render();
+      });
+    });
+    document.querySelectorAll('[data-del-spend]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.budgetSpends = state.budgetSpends.filter(sp => sp.id !== btn.dataset.delSpend);
+        save(); render();
+      });
+    });
+    const editIncomeLink = document.getElementById('editIncomeLink');
+    if (editIncomeLink) editIncomeLink.addEventListener('click', openIncomeSheet);
+    const newGoalLink = document.getElementById('newGoalLink');
+    if (newGoalLink) newGoalLink.addEventListener('click', () => openGoalSheet());
+    const manageDailyCatsLink = document.getElementById('manageDailyCatsLink');
+    if (manageDailyCatsLink) manageDailyCatsLink.addEventListener('click', openDailyCatManageSheet);
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll('nav.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      activeTab = btn.dataset.tab;
+      expandedCatId = null;
+      render();
+    });
+  });
+
+  // ---------- month navigation ----------
+  document.getElementById('prevMonthBtn').addEventListener('click', () => {
+    viewOffset -= 1;
+    const vd = viewMonthDate();
+    selectedDate = vd.getFullYear()+'-'+String(vd.getMonth()+1).padStart(2,'0')+'-01';
+    render();
+  });
+  document.getElementById('nextMonthBtn').addEventListener('click', () => {
+    viewOffset += 1;
+    const vd = viewMonthDate();
+    selectedDate = vd.getFullYear()+'-'+String(vd.getMonth()+1).padStart(2,'0')+'-01';
+    render();
+  });
+
+  // ---------- sheets ----------
+  const txBackdrop = document.getElementById('txBackdrop');
+  const dailyCatBackdrop = document.getElementById('dailyCatBackdrop');
+  const catBackdrop = document.getElementById('catBackdrop');
+  const spendBackdrop = document.getElementById('spendBackdrop');
+  const billBackdrop = document.getElementById('billBackdrop');
+  const billBudgetBackdrop = document.getElementById('billBudgetBackdrop');
+  const incomeBackdrop = document.getElementById('incomeBackdrop');
+  const renameBackdrop = document.getElementById('renameBackdrop');
+  const goalBackdrop = document.getElementById('goalBackdrop');
+  const contribBackdrop = document.getElementById('contribBackdrop');
+
+  function openSheet(el){ el.classList.add('show'); }
+  function closeSheet(el){ el.classList.remove('show'); }
+  [txBackdrop, dailyCatBackdrop, catBackdrop, spendBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, renameBackdrop, goalBackdrop, contribBackdrop].forEach(bd => {
+    bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
+  });
+
+  function openIncomeSheet(){
+    document.getElementById('incomeInput').value = state.income || '';
+    openSheet(incomeBackdrop);
+  }
+  document.getElementById('settingsBtn').addEventListener('click', openIncomeSheet);
+  document.getElementById('incomeCancel').addEventListener('click', () => closeSheet(incomeBackdrop));
+  document.getElementById('incomeSave').addEventListener('click', () => {
+    state.income = parseFloat(document.getElementById('incomeInput').value) || 0;
+    save(); closeSheet(incomeBackdrop); render();
+  });
+
+  // rename sheet
+  document.getElementById('brandName').addEventListener('click', () => {
+    document.getElementById('renameInput').value = state.ledgerName;
+    openSheet(renameBackdrop);
+  });
+  document.getElementById('renameCancel').addEventListener('click', () => closeSheet(renameBackdrop));
+  document.getElementById('renameSave').addEventListener('click', () => {
+    const name = document.getElementById('renameInput').value.trim();
+    state.ledgerName = name || 'Ledger';
+    save(); closeSheet(renameBackdrop); render();
+  });
+
+  // quick log-expense sheet (category chosen by tapping a tile)
+  let txCategoryId = null;
+  function openTxSheet(categoryId){
+    txCategoryId = categoryId;
+    const cat = state.dailyCategories.find(c=>c.id===categoryId);
+    document.getElementById('txCatLabel').textContent = cat ? 'For: ' + cat.name : '';
+    document.getElementById('txAmount').value = '';
+    document.getElementById('txNote').value = '';
+    document.getElementById('txDate').value = selectedDate;
+    openSheet(txBackdrop);
+  }
+  document.getElementById('txCancel').addEventListener('click', () => closeSheet(txBackdrop));
+  document.getElementById('txSave').addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('txAmount').value);
+    if (!amount || amount <= 0 || !txCategoryId) return;
+    const note = document.getElementById('txNote').value.trim();
+    const date = document.getElementById('txDate').value || todayISO();
+    state.expenses.push({ id: uid(), amount, note, categoryId: txCategoryId, date });
+    save(); closeSheet(txBackdrop); selectedDate = date; render();
+  });
+
+  // manage daily categories (add / delete only)
+  function renderDailyCatList(){
+    const el = document.getElementById('dailyCatList');
+    if (state.dailyCategories.length === 0){
+      el.innerHTML = `<div class="empty-mini" style="margin-bottom:14px;">No categories yet — add your first one below.</div>`;
+      return;
+    }
+    el.innerHTML = state.dailyCategories.map(c => `
+      <div class="tx-row">
+        <div class="tx-main"><div class="note">${escapeHtml(c.name)}</div></div>
+        <button class="tx-del" data-del-daily-cat="${c.id}" aria-label="Delete">&times;</button>
+      </div>`).join('') + '<div style="height:8px;"></div>';
+    el.querySelectorAll('[data-del-daily-cat]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.dailyCategories = state.dailyCategories.filter(c => c.id !== btn.dataset.delDailyCat);
+        save(); renderDailyCatList();
+      });
+    });
+  }
+  function openDailyCatManageSheet(){
+    renderDailyCatList();
+    document.getElementById('newDailyCatName').value = '';
+    openSheet(dailyCatBackdrop);
+  }
+  document.getElementById('addDailyCatBtn').addEventListener('click', () => {
+    const name = document.getElementById('newDailyCatName').value.trim();
+    if (!name) return;
+    state.dailyCategories.push({ id: uid(), name });
+    save(); document.getElementById('newDailyCatName').value = ''; renderDailyCatList();
+  });
+  document.getElementById('dailyCatDone').addEventListener('click', () => { closeSheet(dailyCatBackdrop); render(); });
+
+  // budget category sheet (separate from daily categories)
+  let editingCatId = null;
+  let catPeriod = 'monthly';
+  document.querySelectorAll('#catPeriodSeg button').forEach(b => {
+    b.addEventListener('click', () => { catPeriod = b.dataset.period; syncCatPeriodSeg(); });
+  });
+  function syncCatPeriodSeg(){
+    document.querySelectorAll('#catPeriodSeg button').forEach(b => b.classList.toggle('on', b.dataset.period===catPeriod));
+  }
+  function openCatSheet(catId){
+    editingCatId = catId;
+    const cat = catId ? state.budgetCategories.find(c=>c.id===catId) : null;
+    document.getElementById('catSheetTitle').textContent = cat ? 'Edit budget category' : 'New budget category';
+    document.getElementById('catName').value = cat ? cat.name : '';
+    document.getElementById('catBudget').value = cat ? cat.budget : '';
+    catPeriod = cat ? cat.period : 'monthly';
+    syncCatPeriodSeg();
+    document.getElementById('catDelete').style.display = cat ? 'block' : 'none';
+    openSheet(catBackdrop);
+  }
+  document.getElementById('catCancel').addEventListener('click', () => closeSheet(catBackdrop));
+  document.getElementById('catSave').addEventListener('click', () => {
+    const name = document.getElementById('catName').value.trim();
+    const budget = parseFloat(document.getElementById('catBudget').value) || 0;
+    if (!name) return;
+    if (editingCatId) {
+      const cat = state.budgetCategories.find(c=>c.id===editingCatId);
+      cat.name = name; cat.budget = budget; cat.period = catPeriod;
+    } else {
+      state.budgetCategories.push({ id: uid(), name, budget, period: catPeriod });
+    }
+    save(); closeSheet(catBackdrop); render();
+  });
+  document.getElementById('catDelete').addEventListener('click', () => {
+    state.budgetCategories = state.budgetCategories.filter(c => c.id !== editingCatId);
+    state.budgetSpends = state.budgetSpends.filter(e => e.categoryId !== editingCatId);
+    save(); closeSheet(catBackdrop); render();
+  });
+
+  // manual budget spend item sheet
+  let spendCatId = null;
+  function openSpendSheet(catId){
+    spendCatId = catId;
+    const cat = state.budgetCategories.find(c => c.id === catId);
+    document.getElementById('spendCatLabel').textContent = cat ? 'For: ' + cat.name : '';
+    document.getElementById('spendAmount').value = '';
+    document.getElementById('spendNote').value = '';
+    const vd = viewMonthDate();
+    document.getElementById('spendDate').value = isViewingCurrentMonth() ? todayISO() : (vd.getFullYear()+'-'+String(vd.getMonth()+1).padStart(2,'0')+'-01');
+    openSheet(spendBackdrop);
+  }
+  document.getElementById('spendCancel').addEventListener('click', () => closeSheet(spendBackdrop));
+  document.getElementById('spendSave').addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('spendAmount').value);
+    if (!amount || amount <= 0 || !spendCatId) return;
+    const note = document.getElementById('spendNote').value.trim();
+    const date = document.getElementById('spendDate').value || todayISO();
+    state.budgetSpends.push({ id: uid(), categoryId: spendCatId, amount, note, date });
+    save(); closeSheet(spendBackdrop); expandedCatId = spendCatId; render();
+  });
+
+  // bill sheet
+  let billRepeat = 'monthly';
+  document.querySelectorAll('#billRepeatSeg button').forEach(b => {
+    b.addEventListener('click', () => { billRepeat = b.dataset.repeat; syncBillRepeatSeg(); });
+  });
+  function syncBillRepeatSeg(){
+    document.querySelectorAll('#billRepeatSeg button').forEach(b => b.classList.toggle('on', b.dataset.repeat===billRepeat));
+  }
+  document.getElementById('billCancel').addEventListener('click', () => closeSheet(billBackdrop));
+  document.getElementById('billSave').addEventListener('click', () => {
+    const name = document.getElementById('billName').value.trim();
+    const amount = parseFloat(document.getElementById('billAmount').value);
+    const dueDate = document.getElementById('billDue').value;
+    if (!name || !amount || amount <= 0 || !dueDate) return;
+    state.bills.push({ id: uid(), name, amount, dueDate, repeat: billRepeat, paidOnce: false });
+    document.getElementById('billName').value = '';
+    document.getElementById('billAmount').value = '';
+    document.getElementById('billDue').value = '';
+    save(); closeSheet(billBackdrop); render();
+  });
+
+  // bill -> budget spend sheet
+  let billBudgetSourceId = null;
+  function openBillBudgetSheet(billId){
+    const bill = state.bills.find(b => b.id === billId);
+    if (!bill) return;
+    if (state.budgetCategories.length === 0) { openCatSheet(null); return; }
+    billBudgetSourceId = billId;
+    document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmt(bill.amount);
+    const sel = document.getElementById('billBudgetCategory');
+    sel.innerHTML = state.budgetCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    document.getElementById('billBudgetAmount').value = bill.amount;
+    document.getElementById('billBudgetDate').value = todayISO();
+    openSheet(billBudgetBackdrop);
+  }
+  document.getElementById('billBudgetCancel').addEventListener('click', () => closeSheet(billBudgetBackdrop));
+  document.getElementById('billBudgetSave').addEventListener('click', () => {
+    const bill = state.bills.find(b => b.id === billBudgetSourceId);
+    const categoryId = document.getElementById('billBudgetCategory').value;
+    const amount = parseFloat(document.getElementById('billBudgetAmount').value);
+    const date = document.getElementById('billBudgetDate').value || todayISO();
+    if (!amount || amount <= 0 || !categoryId) return;
+    state.budgetSpends.push({ id: uid(), categoryId, amount, note: bill ? bill.name : 'Bill', date });
+    save(); closeSheet(billBudgetBackdrop); render();
+  });
+
+  // goal sheet
+  let goalFreq = 'weekly';
+  document.querySelectorAll('#goalFreqSeg button').forEach(b => {
+    b.addEventListener('click', () => { goalFreq = b.dataset.freq; syncGoalFreqSeg(); });
+  });
+  function syncGoalFreqSeg(){
+    document.querySelectorAll('#goalFreqSeg button').forEach(b => b.classList.toggle('on', b.dataset.freq===goalFreq));
+  }
+  function openGoalSheet(){
+    document.getElementById('goalName').value = '';
+    document.getElementById('goalTarget').value = '';
+    document.getElementById('goalDate').value = '';
+    goalFreq = 'weekly';
+    syncGoalFreqSeg();
+    openSheet(goalBackdrop);
+  }
+  document.getElementById('goalCancel').addEventListener('click', () => closeSheet(goalBackdrop));
+  document.getElementById('goalSave').addEventListener('click', () => {
+    const name = document.getElementById('goalName').value.trim();
+    const target = parseFloat(document.getElementById('goalTarget').value);
+    const targetDate = document.getElementById('goalDate').value || null;
+    if (!name || !target || target <= 0) return;
+    state.savingsGoals.push({ id: uid(), name, target, targetDate, frequency: goalFreq, contributions: [] });
+    save(); closeSheet(goalBackdrop); render();
+  });
+
+  function openContribSheet(goalId){
+    const sel = document.getElementById('contribGoal');
+    sel.innerHTML = state.savingsGoals.map(g => `<option value="${g.id}" ${g.id===goalId?'selected':''}>${escapeHtml(g.name)}</option>`).join('');
+    document.getElementById('contribAmount').value = '';
+    openSheet(contribBackdrop);
+  }
+  document.getElementById('contribCancel').addEventListener('click', () => closeSheet(contribBackdrop));
+  document.getElementById('contribSave').addEventListener('click', () => {
+    const goalId = document.getElementById('contribGoal').value;
+    const amount = parseFloat(document.getElementById('contribAmount').value);
+    if (!amount || amount <= 0) return;
+    const goal = state.savingsGoals.find(g => g.id === goalId);
+    if (!goal) return;
+    goal.contributions.push({ id: uid(), date: todayISO(), amount });
+    save(); closeSheet(contribBackdrop); render();
+  });
+
+  // ---------- FAB ----------
+  document.getElementById('fabBtn').addEventListener('click', () => {
+    if (activeTab === 'daily') openDailyCatManageSheet();
+    else if (activeTab === 'budget') openCatSheet(null);
+    else if (activeTab === 'bills') { document.getElementById('billDue').value = todayISO(); billRepeat='monthly'; syncBillRepeatSeg(); openSheet(billBackdrop); }
+    else if (activeTab === 'savings') {
+      if (state.savingsGoals.length === 0) openGoalSheet();
+      else openContribSheet(state.savingsGoals[0].id);
+    }
+  });
+
+  // ---------- init ----------
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
