@@ -122,14 +122,50 @@
   .cal-legend .dot.bill-paid { background: var(--good); }
 
   /* daily category tiles */
-  .tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .cat-tile {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 6px; text-align: center; font-family: inherit; font-size: 12.5px; font-weight: 500;
-    color: var(--text); cursor: pointer; line-height: 1.3; min-height: 56px;
-    display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 6px 12px; text-align: center; font-family: inherit; font-size: 12px; font-weight: 500;
+    color: var(--text); cursor: pointer; line-height: 1.25; min-height: 78px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
+    transition: transform .1s ease, background .12s ease, border-color .12s ease;
   }
-  .cat-tile:active { background: var(--accent-soft); border-color: var(--accent); }
+  .cat-tile .tile-icon {
+    width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .cat-tile:active { background: var(--accent-soft); border-color: var(--accent); transform: scale(0.97); }
+
+  /* category icon badge used in lists */
+  .cat-icon {
+    width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 14px;
+    margin-right: 8px; flex-shrink: 0; vertical-align: middle;
+  }
+
+  /* toggle switch */
+  .toggle-switch {
+    width: 40px; height: 24px; border-radius: 20px; background: var(--surface-2);
+    border: 1px solid var(--border); position: relative; cursor: pointer; flex-shrink: 0;
+    transition: background .15s ease;
+  }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    transition: transform .15s ease;
+  }
+  .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+  .toggle-switch.on::after { transform: translateX(16px); background: var(--surface); }
+
+  .manage-row { display: flex; align-items: center; gap: 10px; }
+  .manage-row + .manage-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .manage-row .manage-name {
+    flex: 1; border: none; background: transparent; color: var(--text);
+    font-family: inherit; font-size: 14.5px; font-weight: 500; padding: 4px 0;
+  }
+  .manage-row .manage-name:focus { outline: none; border-bottom: 1px solid var(--accent); }
+  .manage-row.disabled .manage-name { color: var(--text-dim); }
+  .manage-row.disabled .cat-icon { opacity: 0.45; }
 
   .day-detail-label { font-size: 13px; font-weight: 500; margin: 16px 0 8px; }
 
@@ -313,6 +349,18 @@
     </label>
     <button class="btn-primary" id="addDailyCatBtn">Add category</button>
     <button class="btn-secondary" id="dailyCatDone">Done</button>
+  </div>
+</div>
+
+<!-- Manage budget categories (toggle on/off, rename, delete) -->
+<div class="sheet-backdrop" id="budgetCatManageBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Manage budget categories</h2>
+    <div class="sub-label">Tap the icon to edit a category's amount or period.</div>
+    <div id="budgetCatManageList"></div>
+    <button class="btn-primary" id="addBudgetCatBtn">+ New category</button>
+    <button class="btn-secondary" id="budgetCatManageDone">Done</button>
   </div>
 </div>
 
@@ -526,6 +574,17 @@
   const DOW = ['S','M','T','W','T','F','S'];
   const PALETTE = ['#B8863F','#4F8F6D','#5B7FA6','#B8483B','#8A6BAE','#4C9A9A'];
   const FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Biweekly', monthly: 'Monthly' };
+  const DAILY_PRESETS = [
+    {name:'Food & Drink', icon:'🍽️'}, {name:'Groceries', icon:'🛒'}, {name:'Transport', icon:'🚌'},
+    {name:'Household', icon:'🏠'}, {name:'Self-care', icon:'💆'}, {name:'Shopping', icon:'🛍️'},
+    {name:'Services', icon:'🔧'}, {name:'Subscriptions', icon:'🔁'}, {name:'Entertainment', icon:'🎬'},
+    {name:'Mobile Plan', icon:'📱'}, {name:'Insurance', icon:'🛡️'}
+  ];
+  const BUDGET_PRESETS = [
+    {name:'Investments', icon:'📈'}, {name:'Savings', icon:'💰'}, {name:'RRSP', icon:'🏦'},
+    {name:'Rent', icon:'🏠'}, {name:'Credit Card', icon:'💳'}, {name:'Travel', icon:'✈️'},
+    {name:'Insurance', icon:'🛡️'}, {name:'Gift', icon:'🎁'}
+  ];
 
   function todayISO(){ return new Date().toISOString().slice(0,10); }
   function realMonthKey(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
@@ -585,9 +644,20 @@
     }
     if (!state.dailyCategories) state.dailyCategories = [];
     if (!state.budgetCategories) state.budgetCategories = [];
+    if (!state.seededDefaults) {
+      DAILY_PRESETS.forEach(p => state.dailyCategories.push({ id: uid(), name: p.name, icon: p.icon, enabled: true }));
+      BUDGET_PRESETS.forEach(p => state.budgetCategories.push({ id: uid(), name: p.name, icon: p.icon, budget: 0, period: 'monthly', overrides: {}, enabled: true }));
+      state.seededDefaults = true;
+    }
+    state.dailyCategories.forEach(c => {
+      if (typeof c.enabled !== 'boolean') c.enabled = true;
+      if (!c.icon) c.icon = '🏷️';
+    });
     state.budgetCategories.forEach(c => {
       if (!c.overrides) c.overrides = {};
       if (typeof c.budget !== 'number') c.budget = 0;
+      if (typeof c.enabled !== 'boolean') c.enabled = true;
+      if (!c.icon) c.icon = '🏷️';
     });
     if (!state.expenses) state.expenses = [];
     if (!state.budgetSpends) state.budgetSpends = [];
@@ -660,7 +730,7 @@
   }
   function totalBudgeted(){
     const mk = viewMonthKey();
-    return state.budgetCategories.reduce((s,c) => {
+    return state.budgetCategories.filter(c => c.enabled).reduce((s,c) => {
       const eff = getCategoryBudget(c, mk);
       return s + (c.period === 'weekly' ? eff*4.345 : eff);
     }, 0);
@@ -727,12 +797,13 @@
       </div>`;
 
     html += `<div class="section-title"><span>Log an expense</span><button class="link-btn" id="manageDailyCatsLink">Manage</button></div>`;
-    if (state.dailyCategories.length === 0) {
-      html += `<div class="empty"><b>No categories yet.</b><br>Tap "Manage" to add categories like Groceries or Coffee, then tap one to log a spend against it.</div>`;
+    const activeDailyCats = state.dailyCategories.filter(c => c.enabled);
+    if (activeDailyCats.length === 0) {
+      html += `<div class="empty"><b>No categories turned on.</b><br>Tap "Manage" to turn on categories like Groceries or Coffee, then tap one to log a spend against it.</div>`;
     } else {
       html += `<div class="tile-grid">`;
-      state.dailyCategories.forEach(c => {
-        html += `<button type="button" class="cat-tile" data-log-cat="${c.id}">${escapeHtml(c.name)}</button>`;
+      activeDailyCats.forEach(c => {
+        html += `<button type="button" class="cat-tile" data-log-cat="${c.id}"><span class="tile-icon">${c.icon}</span>${escapeHtml(c.name)}</button>`;
       });
       html += `</div>`;
     }
@@ -747,6 +818,7 @@
         const cat = state.dailyCategories.find(c => c.id === t.categoryId);
         html += `
           <div class="tx-row">
+            ${cat ? `<span class="cat-icon">${cat.icon}</span>` : ''}
             <div class="tx-main">
               <div class="note">${escapeHtml(t.note || (cat?cat.name:'Expense'))}</div>
               ${cat ? `<div class="meta">${escapeHtml(cat.name)}</div>` : ''}
@@ -782,13 +854,15 @@
       <button class="link-btn" id="editIncomeLink">Edit this month's income</button>
     `;
 
-    if (state.budgetCategories.length === 0) {
-      html += `<div class="empty" style="margin-top:18px;"><b>No budget categories yet.</b><br>Tap the + button to create one, like Groceries or Transport, with a weekly or monthly limit. These are separate from your Daily tab categories — this tab is your summary view.</div>`;
+    html += `<div class="section-title"><span>Categories</span><button class="link-btn" id="manageBudgetCatsLink">Manage</button></div>`;
+    const activeBudgetCats = state.budgetCategories.filter(c => c.enabled);
+    if (activeBudgetCats.length === 0) {
+      html += `<div class="empty"><b>No budget categories turned on.</b><br>Tap "Manage categories" to turn one on, or create a custom one, like Groceries or Transport, with a weekly or monthly limit.</div>`;
       return html;
     }
 
     // donut of this month's manual spend items by category
-    const spendByCat = state.budgetCategories.map(c => ({ c, spent: monthBudgetSpends().filter(e=>e.categoryId===c.id).reduce((s,e)=>s+e.amount,0) }))
+    const spendByCat = activeBudgetCats.map(c => ({ c, spent: monthBudgetSpends().filter(e=>e.categoryId===c.id).reduce((s,e)=>s+e.amount,0) }))
       .filter(x => x.spent > 0);
     if (spendByCat.length > 0) {
       const totalSpendForDonut = spendByCat.reduce((s,x)=>s+x.spent,0);
@@ -810,8 +884,7 @@
       html += `</div></div></div>`;
     }
 
-    html += `<div class="section-title"><span>Categories</span></div>`;
-    state.budgetCategories.forEach(c => {
+    activeBudgetCats.forEach(c => {
       const effBudget = getCategoryBudget(c, mk);
       const spentP = categorySpentInPeriod(c);
       const pct = effBudget > 0 ? Math.min(100, (spentP/effBudget)*100) : (spentP>0?100:0);
@@ -823,7 +896,7 @@
       html += `
         <div class="card cat-row">
           <div class="row-top" data-edit-cat="${c.id}">
-            <div class="name">${escapeHtml(c.name)}<span class="period-tag">${c.period}</span></div>
+            <div class="name"><span class="cat-icon">${c.icon}</span>${escapeHtml(c.name)}<span class="period-tag">${c.period}</span></div>
             <div class="figures"><b>${fmt(spentP)}</b> / ${fmt(effBudget)}</div>
           </div>
           <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
@@ -1174,6 +1247,8 @@
     if (newTrackerLink) newTrackerLink.addEventListener('click', () => openTrackerSheet());
     const manageDailyCatsLink = document.getElementById('manageDailyCatsLink');
     if (manageDailyCatsLink) manageDailyCatsLink.addEventListener('click', openDailyCatManageSheet);
+    const manageBudgetCatsLink = document.getElementById('manageBudgetCatsLink');
+    if (manageBudgetCatsLink) manageBudgetCatsLink.addEventListener('click', openBudgetCatManageSheet);
   }
 
   // ---------- tabs ----------
@@ -1201,6 +1276,7 @@
   // ---------- sheets ----------
   const txBackdrop = document.getElementById('txBackdrop');
   const dailyCatBackdrop = document.getElementById('dailyCatBackdrop');
+  const budgetCatManageBackdrop = document.getElementById('budgetCatManageBackdrop');
   const catBackdrop = document.getElementById('catBackdrop');
   const budgetScopeBackdrop = document.getElementById('budgetScopeBackdrop');
   const spendBackdrop = document.getElementById('spendBackdrop');
@@ -1215,7 +1291,7 @@
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -1277,14 +1353,32 @@
       return;
     }
     el.innerHTML = state.dailyCategories.map(c => `
-      <div class="tx-row">
-        <div class="tx-main"><div class="note">${escapeHtml(c.name)}</div></div>
+      <div class="manage-row ${c.enabled ? '' : 'disabled'}" data-row="${c.id}">
+        <span class="cat-icon">${c.icon}</span>
+        <input type="text" class="manage-name" value="${escapeHtml(c.name)}" data-rename-daily-cat="${c.id}">
+        <div class="toggle-switch ${c.enabled ? 'on' : ''}" data-toggle-daily-cat="${c.id}"></div>
         <button class="tx-del" data-del-daily-cat="${c.id}" aria-label="Delete">&times;</button>
       </div>`).join('') + '<div style="height:8px;"></div>';
     el.querySelectorAll('[data-del-daily-cat]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.dailyCategories = state.dailyCategories.filter(c => c.id !== btn.dataset.delDailyCat);
         save(); renderDailyCatList();
+      });
+    });
+    el.querySelectorAll('[data-toggle-daily-cat]').forEach(sw => {
+      sw.addEventListener('click', () => {
+        const cat = state.dailyCategories.find(c => c.id === sw.dataset.toggleDailyCat);
+        if (!cat) return;
+        cat.enabled = !cat.enabled;
+        save(); renderDailyCatList();
+      });
+    });
+    el.querySelectorAll('[data-rename-daily-cat]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const cat = state.dailyCategories.find(c => c.id === inp.dataset.renameDailyCat);
+        if (!cat) return;
+        cat.name = inp.value.trim() || cat.name;
+        save();
       });
     });
   }
@@ -1296,10 +1390,62 @@
   document.getElementById('addDailyCatBtn').addEventListener('click', () => {
     const name = document.getElementById('newDailyCatName').value.trim();
     if (!name) return;
-    state.dailyCategories.push({ id: uid(), name });
+    state.dailyCategories.push({ id: uid(), name, icon: '🏷️', enabled: true });
     save(); document.getElementById('newDailyCatName').value = ''; renderDailyCatList();
   });
   document.getElementById('dailyCatDone').addEventListener('click', () => { closeSheet(dailyCatBackdrop); render(); });
+
+  // manage budget categories (toggle / rename / delete; icon opens full edit sheet)
+  function renderBudgetCatManageList(){
+    const el = document.getElementById('budgetCatManageList');
+    if (state.budgetCategories.length === 0){
+      el.innerHTML = `<div class="empty-mini" style="margin-bottom:14px;">No categories yet — add your first one below.</div>`;
+      return;
+    }
+    el.innerHTML = state.budgetCategories.map(c => `
+      <div class="manage-row ${c.enabled ? '' : 'disabled'}" data-row="${c.id}">
+        <span class="cat-icon" data-edit-budget-cat="${c.id}" style="cursor:pointer;">${c.icon}</span>
+        <input type="text" class="manage-name" value="${escapeHtml(c.name)}" data-rename-budget-cat="${c.id}">
+        <div class="toggle-switch ${c.enabled ? 'on' : ''}" data-toggle-budget-cat="${c.id}"></div>
+        <button class="tx-del" data-del-budget-cat="${c.id}" aria-label="Delete">&times;</button>
+      </div>`).join('') + '<div style="height:8px;"></div>';
+    el.querySelectorAll('[data-edit-budget-cat]').forEach(icon => {
+      icon.addEventListener('click', () => { closeSheet(budgetCatManageBackdrop); openCatSheet(icon.dataset.editBudgetCat); });
+    });
+    el.querySelectorAll('[data-toggle-budget-cat]').forEach(sw => {
+      sw.addEventListener('click', () => {
+        const cat = state.budgetCategories.find(c => c.id === sw.dataset.toggleBudgetCat);
+        if (!cat) return;
+        cat.enabled = !cat.enabled;
+        save(); renderBudgetCatManageList();
+      });
+    });
+    el.querySelectorAll('[data-rename-budget-cat]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const cat = state.budgetCategories.find(c => c.id === inp.dataset.renameBudgetCat);
+        if (!cat) return;
+        cat.name = inp.value.trim() || cat.name;
+        save();
+      });
+    });
+    el.querySelectorAll('[data-del-budget-cat]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.delBudgetCat;
+        state.budgetCategories = state.budgetCategories.filter(c => c.id !== id);
+        state.budgetSpends = state.budgetSpends.filter(e => e.categoryId !== id);
+        save(); renderBudgetCatManageList();
+      });
+    });
+  }
+  function openBudgetCatManageSheet(){
+    renderBudgetCatManageList();
+    openSheet(budgetCatManageBackdrop);
+  }
+  document.getElementById('addBudgetCatBtn').addEventListener('click', () => {
+    closeSheet(budgetCatManageBackdrop);
+    openCatSheet(null);
+  });
+  document.getElementById('budgetCatManageDone').addEventListener('click', () => { closeSheet(budgetCatManageBackdrop); render(); });
 
   // budget category sheet (separate from daily categories); amount changes are scoped by month
   let editingCatId = null;
@@ -1328,7 +1474,7 @@
     const newBudget = parseFloat(document.getElementById('catBudget').value) || 0;
     if (!name) return;
     if (!editingCatId) {
-      state.budgetCategories.push({ id: uid(), name, budget: newBudget, period: catPeriod, overrides: {} });
+      state.budgetCategories.push({ id: uid(), name, budget: newBudget, period: catPeriod, overrides: {}, icon: '🏷️', enabled: true });
       save(); closeSheet(catBackdrop); render();
       return;
     }
@@ -1428,11 +1574,12 @@
   function openBillBudgetSheet(billId){
     const bill = state.bills.find(b => b.id === billId);
     if (!bill) return;
-    if (state.budgetCategories.length === 0) { openCatSheet(null); return; }
+    const enabledCats = state.budgetCategories.filter(c => c.enabled);
+    if (enabledCats.length === 0) { openCatSheet(null); return; }
     billBudgetSourceId = billId;
     document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmt(bill.amount);
     const sel = document.getElementById('billBudgetCategory');
-    sel.innerHTML = state.budgetCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    sel.innerHTML = enabledCats.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name)}</option>`).join('');
     document.getElementById('billBudgetAmount').value = bill.amount;
     document.getElementById('billBudgetDate').value = todayISO();
     openSheet(billBudgetBackdrop);
