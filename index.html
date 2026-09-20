@@ -556,7 +556,7 @@
     <div class="section-title" style="margin-top:4px;"><span>Or clear a date range</span></div>
     <label class="field"><span>From</span><input type="date" id="clearFrom"></label>
     <label class="field"><span>To</span><input type="date" id="clearTo"></label>
-    <div class="sub-label" style="margin:-4px 0 14px;">Deletes expenses, budget spends, savings contributions and tracker entries dated in the range (inclusive), plus monthly income for months that fall entirely inside it. Bills, categories and budget amounts are kept.</div>
+    <div class="sub-label" style="margin:-4px 0 14px;">Deletes expenses, budget spends, savings contributions and tracker entries dated in the range (inclusive), plus the monthly income and budget amounts (Daily Expense and Monthly Budget) for months that fall entirely inside it. Bills and categories are kept.</div>
     <div class="settings-msg" id="clearMsg"></div>
     <button class="btn-danger" id="clearRangeBtn">Clear this date range</button>
     <button class="btn-secondary" id="clearCancel">Cancel</button>
@@ -904,6 +904,19 @@
     let amt = 0;
     (cat.budgetHistory || []).forEach(h => { if (h.from <= mk) amt = h.amount; });
     return amt;
+  }
+  // zero one month of a category's daily budget without changing the months around it
+  function clearDailyBudgetForMonth(cat, mk){
+    if (dailyBudgetFor(cat, mk) <= 0) return;
+    let y = +mk.slice(0,4), m = +mk.slice(5,7) + 1;
+    if (m > 12) { m = 1; y++; }
+    const nk = y + '-' + String(m).padStart(2,'0');
+    const nextAmt = dailyBudgetFor(cat, nk);
+    const hist = (cat.budgetHistory || []).filter(h => h.from !== mk);
+    hist.push({ from: mk, amount: 0 });
+    if (nextAmt > 0 && !hist.some(h => h.from === nk)) hist.push({ from: nk, amount: nextAmt });
+    hist.sort((a,b) => a.from.localeCompare(b.from));
+    cat.budgetHistory = hist;
   }
   function dailySpentInMonth(catId, mk){
     return state.expenses
@@ -1794,20 +1807,32 @@
     if (!from || !to) { clearMsg('Pick both a start and an end date.'); return; }
     if (from > to) { clearMsg('The start date needs to be on or before the end date.'); return; }
     const inRange = d => d >= from && d <= to;
-    const incomeMonths = Object.keys(state.incomeByMonth || {}).filter(mk => {
-      const y = parseInt(mk.slice(0,4), 10), m = parseInt(mk.slice(5,7), 10) - 1;
-      return mk + '-01' >= from && mk + '-' + String(daysInMonth(y, m)).padStart(2,'0') <= to;
-    });
+    // month-level data (income, budget amounts) is cleared only for months the range covers completely
+    const touchedMonths = [];
+    for (let y = +from.slice(0,4), m = +from.slice(5,7) - 1; ; ) {
+      const mk = y + '-' + String(m + 1).padStart(2,'0');
+      if (mk > to.slice(0,7)) break;
+      touchedMonths.push(mk);
+      if (++m > 11) { m = 0; y++; }
+    }
+    const wholeMonth = mk => mk + '-01' >= from && mk + '-' + String(daysInMonth(+mk.slice(0,4), +mk.slice(5,7) - 1)).padStart(2,'0') <= to;
+    const hasIncome = mk => Object.prototype.hasOwnProperty.call(state.incomeByMonth || {}, mk);
+    const hasBudget = mk => state.budgetCategories.some(c => getCategoryBudget(c, mk) > 0) || state.dailyCategories.some(c => dailyBudgetFor(c, mk) > 0);
+    const incomeMonths = touchedMonths.filter(mk => wholeMonth(mk) && hasIncome(mk));
+    const budgetMonths = touchedMonths.filter(mk => wholeMonth(mk) && hasBudget(mk));
+    const partialMonths = touchedMonths.filter(mk => !wholeMonth(mk) && (hasIncome(mk) || hasBudget(mk)));
+    const monthLbl = mk => MONTH_NAMES[+mk.slice(5,7) - 1] + ' ' + mk.slice(0,4);
     const nExp = state.expenses.filter(t => inRange(t.date)).length;
     const nSpend = state.budgetSpends.filter(e => inRange(e.date)).length;
     const nContrib = state.savingsGoals.reduce((n,g) => n + (g.contributions||[]).filter(c => inRange(c.date)).length, 0);
     const nTrack = state.trackers.reduce((n,t) => n + (t.entries||[]).filter(e => inRange(e.date)).length, 0);
-    if (nExp + nSpend + nContrib + nTrack + incomeMonths.length === 0) { clearMsg('Nothing is dated in that range.'); return; }
+    if (nExp + nSpend + nContrib + nTrack + incomeMonths.length + budgetMonths.length === 0) { clearMsg('Nothing is dated in that range.'); return; }
     const lbl = d => new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     const parts = [plural(nExp,'expense','expenses'), plural(nSpend,'budget spend','budget spends'), plural(nContrib,'savings contribution','savings contributions'), plural(nTrack,'tracker entry','tracker entries')];
     if (incomeMonths.length) parts.push('income for ' + plural(incomeMonths.length, 'month', 'months'));
+    if (budgetMonths.length) parts.push('budget amounts for ' + plural(budgetMonths.length, 'month', 'months'));
     askConfirm('Delete data in this range?',
-      'This permanently deletes ' + parts.join(', ') + ' dated ' + lbl(from) + ' to ' + lbl(to) + '. Bills, categories and budget amounts are kept. Export a backup first if you might want it back.',
+      'This permanently deletes ' + parts.join(', ') + ' dated ' + lbl(from) + ' to ' + lbl(to) + '. Bills and categories are kept.' + (partialMonths.length ? ' Income and budgets for ' + partialMonths.map(monthLbl).join(', ') + ' are kept because the range does not cover the whole month.' : '') + ' Export a backup first if you might want it back.',
       'Delete this range',
       () => {
         state.expenses = state.expenses.filter(t => !inRange(t.date));
@@ -1815,6 +1840,12 @@
         state.savingsGoals.forEach(g => { g.contributions = (g.contributions||[]).filter(c => !inRange(c.date)); });
         state.trackers.forEach(t => { t.entries = (t.entries||[]).filter(e => !inRange(e.date)); });
         incomeMonths.forEach(mk => { delete state.incomeByMonth[mk]; });
+        budgetMonths.forEach(mk => {
+          state.budgetCategories.forEach(c => {                       // Monthly Budget: zero that month only
+            if (getCategoryBudget(c, mk) > 0) { c.overrides = c.overrides || {}; c.overrides[mk] = 0; }
+          });
+          state.dailyCategories.forEach(c => clearDailyBudgetForMonth(c, mk));
+        });
         save(); resetViewState(); render();
       });
   });
