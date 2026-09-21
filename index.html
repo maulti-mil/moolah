@@ -234,7 +234,7 @@
   .due-badge.overdue { background: var(--bad-soft); color: var(--bad); }
   .due-badge.soon { background: var(--accent-soft); color: var(--accent); }
   .due-badge.later { background: var(--surface-2); color: var(--text-dim); }
-  .bill-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .bill-actions { display: flex; justify-content: flex-end; gap: 18px; margin-top: 8px; }
 
   .drag-handle {
     cursor: grab; color: var(--text-dim); font-size: 15px; margin-right: 8px;
@@ -434,6 +434,18 @@
   </div>
 </div>
 
+<!-- Bill amount change: this month only, or all future dates -->
+<div class="sheet-backdrop" id="billScopeBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Apply this change to…</h2>
+    <div class="sub-label" id="billScopeLabel"></div>
+    <button class="btn-primary" id="billScopeThis"></button>
+    <button class="btn-primary" id="billScopeAll" style="margin-top:8px;"></button>
+    <button class="btn-secondary" id="billScopeCancel">Cancel</button>
+  </div>
+</div>
+
 <!-- Add a manual budget spend item -->
 <div class="sheet-backdrop" id="spendBackdrop">
   <div class="sheet">
@@ -462,13 +474,14 @@
 <div class="sheet-backdrop" id="billBackdrop">
   <div class="sheet">
     <div class="handle"></div>
-    <h2>Add a bill</h2>
+    <h2 id="billSheetTitle">Add a bill</h2>
     <label class="field"><span>Name</span>
       <input type="text" id="billName" placeholder="e.g. Internet">
     </label>
     <label class="field"><span>Amount</span>
-      <input type="number" id="billAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+      <input type="number" id="billAmount" inputmode="decimal" placeholder="0.00" step="0.01" min="0">
     </label>
+    <div class="sub-label" style="margin:-6px 0 14px;">Can be 0 for now. Set the amount whenever the bill arrives.</div>
     <label class="field"><span>Next due date</span>
       <input type="date" id="billDue">
     </label>
@@ -781,18 +794,23 @@
   function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
   function isoAdd(iso, days){
     const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+days);
-    return d.toISOString().slice(0,10);
+    return isoLocal(d);
   }
-  function isoAddMonths(iso, months){
-    const d = new Date(iso+'T00:00:00'); d.setMonth(d.getMonth()+months);
-    return d.toISOString().slice(0,10);
+  function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  // add months, keeping the original day of month where possible (Jan 31 -> Feb 28 -> Mar 31)
+  function isoAddMonths(iso, months, day){
+    const d = new Date(iso+'T00:00:00');
+    const want = day || d.getDate();
+    d.setDate(1); d.setMonth(d.getMonth()+months);
+    d.setDate(Math.min(want, new Date(d.getFullYear(), d.getMonth()+1, 0).getDate()));
+    return isoLocal(d);
   }
   function weekRange(iso){
     const d = new Date(iso+'T00:00:00');
     const dow = d.getDay();
     const start = new Date(d); start.setDate(d.getDate()-dow);
     const end = new Date(start); end.setDate(start.getDate()+6);
-    return [start.toISOString().slice(0,10), end.toISOString().slice(0,10)];
+    return [isoLocal(start), isoLocal(end)];
   }
   function daysBetween(a,b){
     return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000);
@@ -847,6 +865,8 @@
     state.bills.forEach(b => {
       if (typeof b.paid !== 'boolean') b.paid = (typeof b.paidOnce === 'boolean') ? b.paidOnce : false;
       delete b.paidOnce;
+      if (typeof b.amount !== 'number' || isNaN(b.amount)) b.amount = 0;
+      if (!b.overrides || typeof b.overrides !== 'object') b.overrides = {};
     });
     normalizeBills();
     if (!state.savingsGoals) state.savingsGoals = [];
@@ -984,6 +1004,12 @@
   }
   function getIncomeForMonth(mk){ return (state.incomeByMonth && state.incomeByMonth[mk]) || 0; }
 
+  // A recurring bill has a base amount (applies to every cycle) plus optional one-cycle overrides keyed by due date.
+  function billAmountFor(b){
+    const o = b.overrides;
+    return (o && Object.prototype.hasOwnProperty.call(o, b.dueDate)) ? o[b.dueDate] : (b.amount || 0);
+  }
+  function billHasOverride(b){ return !!b.overrides && Object.prototype.hasOwnProperty.call(b.overrides, b.dueDate); }
   function nextBillDueLabel(bill){
     const diff = daysBetween(todayISO(), bill.dueDate);
     if (diff < 0) return {cls:'overdue', text: 'Overdue'};
@@ -998,8 +1024,9 @@
     state.bills.forEach(bill => {
       if (bill.repeat !== 'none' && bill.paid && today > bill.dueDate) {
         if (bill.repeat === 'weekly') bill.dueDate = isoAdd(bill.dueDate, 7);
-        else if (bill.repeat === 'monthly') bill.dueDate = isoAddMonths(bill.dueDate, 1);
+        else if (bill.repeat === 'monthly') bill.dueDate = isoAddMonths(bill.dueDate, 1, bill.day);
         bill.paid = false;
+        bill.overrides = {};      // a "just this month" amount only lasts for its own cycle
       }
     });
   }
@@ -1241,21 +1268,27 @@
   function renderBillItem(b){
     const badge = nextBillDueLabel(b);
     const checked = !!b.paid;
+    const eff = billAmountFor(b);
+    const repLabel = b.repeat === 'none' ? 'One-time' : b.repeat.charAt(0).toUpperCase()+b.repeat.slice(1);
+    let extra = '';
+    if (eff <= 0) extra = ' · amount not set';
+    else if (b.repeat !== 'none' && billHasOverride(b)) extra = b.repeat === 'weekly' ? ' · this week only' : ' · this month only';
     return `
       <div class="bill-item">
         <div class="bill-row">
           <div class="bill-check ${checked ? 'paid' : ''}" data-toggle-bill="${b.id}">${checked ? '✓' : ''}</div>
           <div class="tx-main">
             <div class="note">${escapeHtml(b.name)}</div>
-            <div class="meta">${b.repeat === 'none' ? 'One-time' : b.repeat.charAt(0).toUpperCase()+b.repeat.slice(1)}</div>
+            <div class="meta">${repLabel}${extra}</div>
           </div>
           <div style="text-align:right;">
-            <div class="tx-amount">${fmt(b.amount)}</div>
+            <div class="tx-amount">${fmt(eff)}</div>
             <div class="due-badge ${badge.cls}">${badge.text}</div>
           </div>
           <button class="tx-del" data-del-bill="${b.id}" aria-label="Delete">&times;</button>
         </div>
         <div class="bill-actions">
+          <button class="link-btn" data-edit-bill="${b.id}">Edit</button>
           <button class="link-btn" data-add-bill-budget="${b.id}">+ Add to Budget</button>
         </div>
       </div>`;
@@ -1526,6 +1559,9 @@
         save(); render();
       });
     });
+    document.querySelectorAll('[data-edit-bill]').forEach(btn => {
+      btn.addEventListener('click', () => openBillSheet(btn.dataset.editBill));
+    });
     document.querySelectorAll('[data-add-bill-budget]').forEach(btn => {
       btn.addEventListener('click', () => openBillBudgetSheet(btn.dataset.addBillBudget));
     });
@@ -1644,6 +1680,7 @@
   const spendBackdrop = document.getElementById('spendBackdrop');
   const billBackdrop = document.getElementById('billBackdrop');
   const billBudgetBackdrop = document.getElementById('billBudgetBackdrop');
+  const billScopeBackdrop = document.getElementById('billScopeBackdrop');
   const incomeBackdrop = document.getElementById('incomeBackdrop');
   const dailyBudgetBackdrop = document.getElementById('dailyBudgetBackdrop');
   const settingsBackdrop = document.getElementById('settingsBackdrop');
@@ -1662,7 +1699,7 @@
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billScopeBackdrop, billBudgetBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -2265,18 +2302,79 @@
   function syncBillRepeatSeg(){
     document.querySelectorAll('#billRepeatSeg button').forEach(b => b.classList.toggle('on', b.dataset.repeat===billRepeat));
   }
+  let editingBillId = null;
+  let pendingBillEdit = null;
+  function openBillSheet(billId){
+    editingBillId = billId || null;
+    const b = editingBillId ? state.bills.find(x => x.id === editingBillId) : null;
+    document.getElementById('billSheetTitle').textContent = b ? 'Edit bill' : 'Add a bill';
+    document.getElementById('billSave').textContent = b ? 'Save changes' : 'Save bill';
+    document.getElementById('billName').value = b ? b.name : '';
+    document.getElementById('billAmount').value = (b && billAmountFor(b) > 0) ? billAmountFor(b) : '';
+    document.getElementById('billDue').value = b ? b.dueDate : todayISO();
+    billRepeat = b ? b.repeat : 'monthly';
+    syncBillRepeatSeg();
+    openSheet(billBackdrop);
+  }
   document.getElementById('billCancel').addEventListener('click', () => closeSheet(billBackdrop));
   document.getElementById('billSave').addEventListener('click', () => {
     const name = document.getElementById('billName').value.trim();
-    const amount = parseFloat(document.getElementById('billAmount').value);
+    const raw = parseFloat(document.getElementById('billAmount').value);
+    const amount = isNaN(raw) ? 0 : Math.round(raw * 100) / 100;      // blank or 0 is fine: set it later
     const dueDate = document.getElementById('billDue').value;
-    if (!name || !amount || amount <= 0 || !dueDate) return;
-    state.bills.push({ id: uid(), name, amount, dueDate, repeat: billRepeat, paid: false });
-    document.getElementById('billName').value = '';
-    document.getElementById('billAmount').value = '';
-    document.getElementById('billDue').value = '';
-    save(); closeSheet(billBackdrop); render();
+    if (!name || amount < 0 || !dueDate) return;
+    if (!editingBillId) {
+      state.bills.push({ id: uid(), name, amount, dueDate, day: +dueDate.slice(8,10), repeat: billRepeat, paid: false, overrides: {} });
+      save(); closeSheet(billBackdrop); render();
+      return;
+    }
+    const b = state.bills.find(x => x.id === editingBillId);
+    if (!b) { closeSheet(billBackdrop); return; }
+    const p = { id: b.id, name, amount, dueDate, repeat: billRepeat };
+    const amountChanged = Math.round(amount * 100) !== Math.round(billAmountFor(b) * 100);
+    if (amountChanged && p.repeat !== 'none') {
+      // recurring bill with a new amount: ask which cycles it applies to
+      pendingBillEdit = p;
+      const monthly = p.repeat === 'monthly';
+      const mName = MONTH_NAMES[+dueDate.slice(5,7) - 1];
+      const dLabel = new Date(dueDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      document.getElementById('billScopeLabel').textContent = `Set ${name}'s amount to ${fmtText(amount)} for:`;
+      document.getElementById('billScopeThis').textContent = monthly ? 'Just ' + mName : 'Just the bill due ' + dLabel;
+      document.getElementById('billScopeAll').textContent = monthly ? mName + ' and all future months' : 'That bill and all future bills';
+      closeSheet(billBackdrop);
+      openSheet(billScopeBackdrop);
+      return;
+    }
+    applyBillEdit(p, 'all');
   });
+  // scope: 'this' = only the current cycle's amount, 'all' = this cycle and every future one
+  function applyBillEdit(p, scope){
+    const b = state.bills.find(x => x.id === p.id);
+    if (!b) return;
+    const oldDue = b.dueDate;
+    const amountChanged = Math.round(p.amount * 100) !== Math.round(billAmountFor(b) * 100);
+    b.overrides = b.overrides || {};
+    b.name = p.name; b.repeat = p.repeat; b.dueDate = p.dueDate; b.day = +p.dueDate.slice(8,10);
+    if (oldDue !== p.dueDate && Object.prototype.hasOwnProperty.call(b.overrides, oldDue)) {
+      b.overrides[p.dueDate] = b.overrides[oldDue];               // a moved due date keeps its one-off amount
+      delete b.overrides[oldDue];
+    }
+    if (amountChanged) {
+      if (p.repeat === 'none' || scope === 'all') {
+        b.amount = p.amount;
+        delete b.overrides[b.dueDate];
+      } else if (Math.round(p.amount * 100) === Math.round((b.amount || 0) * 100)) {
+        delete b.overrides[b.dueDate];
+      } else {
+        b.overrides[b.dueDate] = p.amount;
+      }
+    }
+    Object.keys(b.overrides).forEach(k => { if (k !== b.dueDate) delete b.overrides[k]; });
+    save(); closeSheet(billBackdrop); closeSheet(billScopeBackdrop); render();
+  }
+  document.getElementById('billScopeThis').addEventListener('click', () => { const p = pendingBillEdit; pendingBillEdit = null; if (p) applyBillEdit(p, 'this'); });
+  document.getElementById('billScopeAll').addEventListener('click', () => { const p = pendingBillEdit; pendingBillEdit = null; if (p) applyBillEdit(p, 'all'); });
+  document.getElementById('billScopeCancel').addEventListener('click', () => { pendingBillEdit = null; closeSheet(billScopeBackdrop); });
 
   // bill -> budget spend sheet
   let billBudgetSourceId = null;
@@ -2286,10 +2384,10 @@
     const enabledCats = state.budgetCategories.filter(c => c.enabled);
     if (enabledCats.length === 0) { openCatSheet(null); return; }
     billBudgetSourceId = billId;
-    document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmtText(bill.amount);
+    document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmtText(billAmountFor(bill));
     const sel = document.getElementById('billBudgetCategory');
     sel.innerHTML = enabledCats.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name)}</option>`).join('');
-    document.getElementById('billBudgetAmount').value = bill.amount;
+    document.getElementById('billBudgetAmount').value = billAmountFor(bill) > 0 ? billAmountFor(bill) : '';
     document.getElementById('billBudgetDate').value = todayISO();
     openSheet(billBudgetBackdrop);
   }
@@ -2428,7 +2526,7 @@
   document.getElementById('fabBtn').addEventListener('click', () => {
     if (activeTab === 'daily') openDailyCatManageSheet();
     else if (activeTab === 'budget') openCatSheet(null);
-    else if (activeTab === 'bills') { document.getElementById('billDue').value = todayISO(); billRepeat='monthly'; syncBillRepeatSeg(); openSheet(billBackdrop); }
+    else if (activeTab === 'bills') openBillSheet();
     else if (activeTab === 'savings') {
       if (state.savingsGoals.length === 0) openGoalSheet();
       else openContribSheet(state.savingsGoals[0].id);
