@@ -18,7 +18,7 @@
     --bg: #EDE7D6; --surface: #FFFFFF; --surface-2: #F7F1E3;
     --accent: #B8863F; --accent-soft: rgba(184,134,63,0.14);
     --good: #4F8F6D; --good-soft: rgba(79,143,109,0.14);
-    --bad: #B8483B; --bad-soft: rgba(184,72,59,0.14); --orange: #D9772B;
+    --bad: #B8483B; --bad-soft: rgba(184,72,59,0.14);
     --text: #1F2937; --text-dim: #6B7280; --border: rgba(31,41,55,0.12);
     --shadow: 0 1px 2px rgba(31,41,55,0.06);
     color-scheme: light;
@@ -28,7 +28,7 @@
       --bg: #12192B; --surface: #1B2440; --surface-2: #212C4C;
       --accent: #D8B872; --accent-soft: rgba(216,184,114,0.16);
       --good: #7FC79B; --good-soft: rgba(127,199,155,0.14);
-      --bad: #E07A65; --bad-soft: rgba(224,122,101,0.16); --orange: #EE9A55;
+      --bad: #E07A65; --bad-soft: rgba(224,122,101,0.16);
       --text: #F2EEE3; --text-dim: #A7B0C8; --border: rgba(242,238,227,0.12);
       --shadow: 0 1px 2px rgba(0,0,0,0.3); color-scheme: dark;
     }
@@ -37,7 +37,7 @@
     --bg: #12192B; --surface: #1B2440; --surface-2: #212C4C;
     --accent: #D8B872; --accent-soft: rgba(216,184,114,0.16);
     --good: #7FC79B; --good-soft: rgba(127,199,155,0.14);
-    --bad: #E07A65; --bad-soft: rgba(224,122,101,0.16); --orange: #EE9A55;
+    --bad: #E07A65; --bad-soft: rgba(224,122,101,0.16);
     --text: #F2EEE3; --text-dim: #A7B0C8; --border: rgba(242,238,227,0.12);
     --shadow: 0 1px 2px rgba(0,0,0,0.3); color-scheme: dark;
   }
@@ -69,8 +69,7 @@
 
   nav.tabs { display: flex; gap: 4px; padding: 4px; margin: 14px 20px 8px; background: var(--surface-2); border-radius: 12px; }
   nav.tabs button {
-    flex: 1; padding: 8px 2px; border: none; background: transparent; min-height: 40px;
-    display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.15;
+    flex: 1; padding: 9px 2px; border: none; background: transparent;
     font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--text-dim);
     border-radius: 9px; cursor: pointer; transition: background .15s, color .15s;
   }
@@ -135,14 +134,6 @@
     width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft);
     display: flex; align-items: center; justify-content: center; font-size: 17px;
   }
-  /* daily budget highlight on tiles */
-  .cat-tile.b-good { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
-  .cat-tile.b-warn { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); }
-  .cat-tile.b-low { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
-  .cat-tile .tile-left { font-size: 11px; font-weight: 600; margin-top: -4px; }
-  .cat-tile.b-good .tile-left { color: var(--good); }
-  .cat-tile.b-warn .tile-left { color: var(--orange); }
-  .cat-tile.b-low .tile-left { color: var(--bad); }
   .cat-tile:active { background: var(--accent-soft); border-color: var(--accent); transform: scale(0.97); }
 
   /* category icon badge used in lists */
@@ -176,27 +167,6 @@
   .manage-row.disabled .manage-name { color: var(--text-dim); }
   .manage-row.disabled .cat-icon { opacity: 0.45; }
 
-  /* settings menu */
-  .settings-group { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 0 16px; margin-bottom: 14px; }
-  .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 14px 0; background: none; border: none; font-family: inherit; font-size: 15px; font-weight: 500; color: var(--text); text-align: left; cursor: pointer; }
-  .settings-row + .settings-row { border-top: 1px solid var(--border); }
-  .settings-row small { display: block; font-size: 12px; font-weight: 400; color: var(--text-dim); margin-top: 2px; }
-  .settings-row i { font-style: normal; color: var(--text-dim); font-size: 20px; line-height: 1; }
-  .settings-row.danger { color: var(--bad); }
-  .settings-msg { font-size: 13px; color: var(--text-dim); margin: 0 0 6px; }
-  .settings-msg:empty { display: none; }
-  .aed-sym { display: inline-block; width: .82em; height: .82em; vertical-align: -.06em; margin-right: .2em; background-color: currentColor;
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 14V86M24 14H48C76 14 90 30 90 50C90 70 76 86 48 86H24M6 40H86M6 60H86' fill='none' stroke='%23000' stroke-width='10'/%3E%3C/svg%3E") center / contain no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M24 14V86M24 14H48C76 14 90 30 90 50C90 70 76 86 48 86H24M6 40H86M6 60H86' fill='none' stroke='%23000' stroke-width='10'/%3E%3C/svg%3E") center / contain no-repeat; }
-  .settings-row .cur-chip { display: inline-block; min-width: 38px; font-family: 'Spectral', serif; font-weight: 600; }
-  .btn-danger { width: 100%; padding: 13px; border-radius: 12px; border: none; background: var(--bad); color: #fff; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 6px; }
-  /* daily budget settings + excess card */
-  .budget-input-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; color: var(--text-dim); font-size: 14px; }
-  .budget-input-wrap input { width: 96px; padding: 8px 10px; text-align: right; }
-  .budget-total { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-dim); margin: 6px 0 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-  .budget-total b { font-family: 'Spectral', serif; color: var(--text); font-size: 15px; }
-  .excess-pending { font-size: 12.5px; color: var(--text-dim); margin: -2px 0 8px; line-height: 1.4; }
-  .excess-pending b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; }
   .day-detail-label { font-size: 13px; font-weight: 500; margin: 16px 0 8px; }
 
   .tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -212,7 +182,7 @@
   .cat-row .period-tag { font-size: 10.5px; color: var(--text-dim); background: var(--surface-2); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
   .cat-row .figures { font-size: 13px; color: var(--text-dim); white-space:nowrap; }
   .cat-row .figures b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; font-size: 14px; }
-  .cat-actions { display: flex; gap: 14px; margin-top: 10px; }
+  .cat-actions { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .cat-entries { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
   .cat-entries .empty-mini { font-size: 12.5px; color: var(--text-dim); }
 
@@ -271,6 +241,11 @@
     z-index: 50; opacity: 0; pointer-events: none; transition: opacity .18s;
   }
   .sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+  .sheet-backdrop.center-modal { align-items: center; padding: 24px; }
+  .sheet-backdrop.center-modal .sheet {
+    border-radius: 18px; max-width: 320px; text-align: center;
+    padding: 30px 22px calc(26px + env(safe-area-inset-bottom));
+  }
   .sheet {
     background: var(--bg); width: 100%; max-width: 480px;
     border-radius: 18px 18px 0 0; padding: 18px 20px calc(24px + env(safe-area-inset-bottom));
@@ -337,8 +312,8 @@
   </header>
 
   <nav class="tabs">
-    <button data-tab="daily" class="active">Daily Expense</button>
-    <button data-tab="budget">Monthly Budget</button>
+    <button data-tab="daily" class="active">Daily</button>
+    <button data-tab="budget">Budget</button>
     <button data-tab="bills">Bills</button>
     <button data-tab="savings">Savings</button>
   </nav>
@@ -394,6 +369,35 @@
   </div>
 </div>
 
+<!-- Route a budget category's spend into a savings goal contribution -->
+<div class="sheet-backdrop" id="catSavingsBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Add to savings</h2>
+    <div class="sub-label" id="catSavingsLabel"></div>
+    <label class="field"><span>Goal</span>
+      <select id="catSavingsGoal"></select>
+    </label>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="catSavingsAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Date</span>
+      <input type="date" id="catSavingsDate">
+    </label>
+    <button class="btn-primary" id="catSavingsSave">Save</button>
+    <button class="btn-secondary" id="catSavingsCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Centered fun-message pop-up -->
+<div class="sheet-backdrop center-modal" id="funMsgBackdrop">
+  <div class="sheet">
+    <div style="font-size:32px; margin-bottom:8px;">✨</div>
+    <div id="funMsgText" style="font-size:15px; line-height:1.5; margin-bottom:18px;"></div>
+    <button class="btn-primary" id="funMsgOk">Okay</button>
+  </div>
+</div>
+
 <!-- Add/edit budget category sheet -->
 <div class="sheet-backdrop" id="catBackdrop">
   <div class="sheet">
@@ -444,10 +448,6 @@
     <label class="field"><span>Date</span>
       <input type="date" id="spendDate">
     </label>
-    <label class="field" id="spendLinkField" style="display:none;"><span>Also add to my savings</span>
-      <select id="spendLink"></select>
-    </label>
-    <div class="sub-label" id="spendLinkHint" style="display:none;margin:-4px 0 14px;"></div>
     <button class="btn-primary" id="spendSave">Save spend item</button>
     <button class="btn-secondary" id="spendCancel">Cancel</button>
   </div>
@@ -499,83 +499,6 @@
   </div>
 </div>
 
-<!-- Settings menu (gear icon) -->
-<div class="sheet-backdrop" id="settingsBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2>Settings</h2>
-    <div class="settings-group">
-      <button type="button" class="settings-row" id="setBudgetRow"><span>Daily Expense Budget<small>Monthly limit for each daily category</small></span><i>›</i></button>
-      <button type="button" class="settings-row" id="setMonthlyRow"><span>Monthly Expense Budget<small>Budget amounts for your Monthly Budget categories</small></span><i>›</i></button>
-      <button type="button" class="settings-row" id="setCurrencyRow"><span>Currency<small id="setCurrencySub"></small></span><i>›</i></button>
-    </div>
-    <div class="section-title" style="margin-top:4px;"><span>Data</span></div>
-    <div class="settings-group">
-      <button type="button" class="settings-row" id="setExportRow"><span>Export data<small>Save a backup file</small></span></button>
-      <button type="button" class="settings-row" id="setImportRow"><span>Import data<small>Restore from a backup file</small></span></button>
-      <button type="button" class="settings-row danger" id="setClearRow"><span>Clear data<small>Everything, or just a date range</small></span></button>
-    </div>
-    <div class="settings-msg" id="settingsMsg"></div>
-    <input type="file" id="importFile" accept=".json,application/json" hidden>
-    <button class="btn-secondary" id="settingsDone">Done</button>
-  </div>
-</div>
-
-<!-- Daily Expense Budget (from Settings) -->
-<div class="sheet-backdrop" id="dailyBudgetBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2>Daily Expense Budget</h2>
-    <div class="sub-label" id="dailyBudgetSub"></div>
-    <div id="dailyBudgetList"></div>
-    <div class="budget-total"><span>Total per month</span><b id="dailyBudgetTotal">$0.00</b></div>
-    <button class="btn-primary" id="dailyBudgetSave">Save budgets</button>
-    <button class="btn-secondary" id="dailyBudgetCancel">Cancel</button>
-  </div>
-</div>
-
-<!-- Currency (from Settings) -->
-<div class="sheet-backdrop" id="currencyBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2>Currency</h2>
-    <div class="sub-label">Changes the symbol shown across the app. Existing amounts are not converted.</div>
-    <div class="settings-group" id="currencyList"></div>
-    <button class="btn-secondary" id="currencyDone">Done</button>
-  </div>
-</div>
-
-<!-- Clear data (from Settings) -->
-<div class="sheet-backdrop" id="clearBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2>Clear data</h2>
-    <div class="settings-group">
-      <button type="button" class="settings-row danger" id="clearAllRow"><span>Clear all data<small>Delete everything and start fresh</small></span><i>›</i></button>
-    </div>
-    <div class="section-title" style="margin-top:4px;"><span>Or clear a date range</span></div>
-    <label class="field"><span>From</span><input type="date" id="clearFrom"></label>
-    <label class="field"><span>To</span><input type="date" id="clearTo"></label>
-    <div class="sub-label" style="margin:-4px 0 14px;">Deletes expenses, budget spends, savings contributions and tracker entries dated in the range (inclusive), plus the monthly income and budget amounts (Daily Expense and Monthly Budget) for months that fall entirely inside it. Bills and categories are kept.</div>
-    <div class="settings-msg" id="clearMsg"></div>
-    <button class="btn-danger" id="clearRangeBtn">Clear this date range</button>
-    <button class="btn-secondary" id="clearCancel">Cancel</button>
-  </div>
-</div>
-
-<!-- Monthly Expense Budget (from Settings) -->
-<div class="sheet-backdrop" id="monthlyBudgetBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2>Monthly Expense Budget</h2>
-    <div class="sub-label" id="monthlyBudgetSub"></div>
-    <div id="monthlyBudgetList"></div>
-    <div class="budget-total"><span>Total budgeted</span><b id="monthlyBudgetTotal">$0.00</b></div>
-    <button class="btn-primary" id="monthlyBudgetSave">Save budgets</button>
-    <button class="btn-secondary" id="monthlyBudgetCancel">Cancel</button>
-  </div>
-</div>
-
 <!-- Income sheet (per viewed month) -->
 <div class="sheet-backdrop" id="incomeBackdrop">
   <div class="sheet">
@@ -607,7 +530,7 @@
 <div class="sheet-backdrop" id="goalBackdrop">
   <div class="sheet">
     <div class="handle"></div>
-    <h2>New savings goal</h2>
+    <h2 id="goalSheetTitle">New savings goal</h2>
     <label class="field"><span>What are you saving for</span>
       <input type="text" id="goalName" placeholder="e.g. Emergency fund">
     </label>
@@ -626,21 +549,7 @@
     </label>
     <button class="btn-primary" id="goalSave">Create goal</button>
     <button class="btn-secondary" id="goalCancel">Cancel</button>
-  </div>
-</div>
-
-<!-- Edit amount saved sheet -->
-<div class="sheet-backdrop" id="editSavedBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2>Edit amount saved</h2>
-    <div class="sub-label" id="editSavedLabel"></div>
-    <label class="field"><span>Amount saved so far</span>
-      <input type="number" id="editSavedAmount" inputmode="decimal" placeholder="0.00" step="0.01" min="0">
-    </label>
-    <div class="sub-label" style="margin:-4px 0 14px;">This sets the total for the goal. The difference is logged as an adjustment dated today.</div>
-    <button class="btn-primary" id="editSavedSave">Save</button>
-    <button class="btn-secondary" id="editSavedCancel">Cancel</button>
+    <button class="btn-danger-link" id="goalDelete" style="display:none;">Delete goal</button>
   </div>
 </div>
 
@@ -693,17 +602,6 @@
   </div>
 </div>
 
-<!-- Confirm sheet (import / clear) -->
-<div class="sheet-backdrop" id="confirmBackdrop">
-  <div class="sheet">
-    <div class="handle"></div>
-    <h2 id="confirmTitle"></h2>
-    <div class="sub-label" id="confirmMsg" style="margin-top:0;"></div>
-    <button class="btn-danger" id="confirmOk"></button>
-    <button class="btn-secondary" id="confirmCancel">Cancel</button>
-  </div>
-</div>
-
 <script>
 (function(){
   const STORE_KEY = 'ledger-app-data-v4';
@@ -718,26 +616,22 @@
     {name:'Mobile Plan', icon:'📱'}, {name:'Insurance', icon:'🛡️'}
   ];
   const BUDGET_PRESETS = [
-    {name:'Investments', icon:'📈'}, {name:'Savings', icon:'💰'}, {name:'RRSP', icon:'🏦'},
+    {name:'Investments', icon:'📈', linksToSavings:true}, {name:'Savings', icon:'💰', linksToSavings:true}, {name:'RRSP', icon:'🏦', linksToSavings:true},
     {name:'Rent', icon:'🏠'}, {name:'Credit Card', icon:'💳'}, {name:'Travel', icon:'✈️'},
     {name:'Insurance', icon:'🛡️'}, {name:'Gift', icon:'🎁'}
   ];
+  const SAVINGS_LINK_NAMES = ['Investments', 'Savings', 'RRSP'];
+  const POPUP_TRIGGER_CATEGORIES = ['Food & Drink', 'Self-care', 'Shopping'];
+  const POPUP_TRIGGER_AMOUNT = 50;
+  const POPUP_MESSAGE = "Mayro'n din naman palang ganda ang buhay!";
 
-  function todayISO(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
   function realMonthKey(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
   function monthKeyOf(dateStr){ return dateStr.slice(0,7); }
-  const CURRENCIES = {
-    USD: { symbol: '$',    name: 'US / Canadian dollar', short: 'USD / CAD' },
-    AED: { symbol: 'AED', html: '<span class="aed-sym" role="img" aria-label="AED"></span>', name: 'UAE dirham', short: 'AED' },
-    PHP: { symbol: '₱',    name: 'Philippine peso',      short: 'PHP' }
-  };
-  function currentCurrency(){ return CURRENCIES[state && state.currency] || CURRENCIES.USD; }
-  function currencySymbol(){ const c = currentCurrency(); return c.html || c.symbol; }   // HTML: for innerHTML only
-  function fmtNumber(n){ return Math.abs(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
-  function fmt(n){ return (n < 0 ? '-' : '') + currencySymbol() + fmtNumber(n); }      // HTML: for innerHTML only
-  function fmtText(n){                                                                 // plain text (textContent, labels)
-    const sym = currentCurrency().symbol;
-    return (n < 0 ? '-' : '') + sym + (sym.length > 1 ? '\u00A0' : '') + fmtNumber(n);
+  function fmt(n){
+    const neg = n < 0;
+    const v = Math.abs(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    return (neg?'-':'') + '$' + v;
   }
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function escapeHtml(s){
@@ -781,7 +675,6 @@
       state = defaultState();
     }
     if (!state.ledgerName) state.ledgerName = 'Ledger';
-    if (!CURRENCIES[state.currency]) state.currency = 'USD';
     // migrate from the earlier single shared category list, if present
     if (!state.dailyCategories && !state.budgetCategories && Array.isArray(state.categories)) {
       state.budgetCategories = state.categories.map(c => ({ id: c.id, name: c.name, budget: c.budget||0, period: c.period||'monthly', overrides: {} }));
@@ -792,19 +685,19 @@
     if (!state.budgetCategories) state.budgetCategories = [];
     if (!state.seededDefaults) {
       DAILY_PRESETS.forEach(p => state.dailyCategories.push({ id: uid(), name: p.name, icon: p.icon, enabled: true }));
-      BUDGET_PRESETS.forEach(p => state.budgetCategories.push({ id: uid(), name: p.name, icon: p.icon, budget: 0, period: 'monthly', overrides: {}, enabled: true }));
+      BUDGET_PRESETS.forEach(p => state.budgetCategories.push({ id: uid(), name: p.name, icon: p.icon, budget: 0, period: 'monthly', overrides: {}, enabled: true, linksToSavings: !!p.linksToSavings }));
       state.seededDefaults = true;
     }
     state.dailyCategories.forEach(c => {
       if (typeof c.enabled !== 'boolean') c.enabled = true;
       if (!c.icon) c.icon = '🏷️';
-      if (!Array.isArray(c.budgetHistory)) c.budgetHistory = [];
     });
     state.budgetCategories.forEach(c => {
       if (!c.overrides) c.overrides = {};
       if (typeof c.budget !== 'number') c.budget = 0;
       if (typeof c.enabled !== 'boolean') c.enabled = true;
       if (!c.icon) c.icon = '🏷️';
+      if (typeof c.linksToSavings !== 'boolean') c.linksToSavings = SAVINGS_LINK_NAMES.includes(c.name.trim());
     });
     if (!state.expenses) state.expenses = [];
     if (!state.budgetSpends) state.budgetSpends = [];
@@ -842,19 +735,6 @@
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
   }
   function isViewingCurrentMonth(){ return viewOffset === 0; }
-  // entries logged from the Daily / Budget tabs belong to the month being viewed
-  function viewMonthBounds(){
-    const vd = viewMonthDate();
-    const y = vd.getFullYear(), m = vd.getMonth();
-    const mm = String(m+1).padStart(2,'0');
-    return { first: y+'-'+mm+'-01', last: y+'-'+mm+'-'+String(daysInMonth(y,m)).padStart(2,'0') };
-  }
-  function defaultDateForView(){ return isViewingCurrentMonth() ? todayISO() : viewMonthBounds().first; }
-  function clampDateToView(d){ return (d && monthKeyOf(d) === viewMonthKey()) ? d : defaultDateForView(); }
-  function limitDateInputToView(id){
-    const b = viewMonthBounds(), el = document.getElementById(id);
-    el.min = b.first; el.max = b.last;
-  }
 
   // ---------- computed helpers ----------
   function monthExpenses(){
@@ -869,18 +749,16 @@
   }
   function totalBudgetSpendForMonth(){ return monthBudgetSpends().reduce((s,e)=>s+e.amount,0); }
   function categorySpendEntries(cat){
-    const mk = viewMonthKey();
-    return state.budgetSpends.filter(e => e.categoryId === cat.id && monthKeyOf(e.date) === mk).sort((a,b)=> b.date.localeCompare(a.date));
+    return state.budgetSpends.filter(e => e.categoryId === cat.id).sort((a,b)=> b.date.localeCompare(a.date));
   }
   function categorySpentInPeriod(cat){
-    const mk = viewMonthKey();
-    // weekly categories track this week in the current month (clipped to the month); other months show the month's total
-    if (cat.period === 'weekly' && isViewingCurrentMonth()) {
+    if (cat.period === 'weekly') {
       const range = weekRange(todayISO());
       return state.budgetSpends
-        .filter(e => e.categoryId === cat.id && e.date >= range[0] && e.date <= range[1] && monthKeyOf(e.date) === mk)
+        .filter(e => e.categoryId === cat.id && e.date >= range[0] && e.date <= range[1])
         .reduce((s,e)=>s+e.amount,0);
     }
+    const mk = viewMonthKey();
     return state.budgetSpends
       .filter(e => e.categoryId === cat.id && monthKeyOf(e.date) === mk)
       .reduce((s,e)=>s+e.amount,0);
@@ -896,56 +774,6 @@
       const eff = getCategoryBudget(c, mk);
       return s + (c.period === 'weekly' ? eff*4.345 : eff);
     }, 0);
-  }
-  // ---------- daily category budgets (monthly) ----------
-  // budgetHistory = [{from:'YYYY-MM', amount}] sorted ascending; the latest entry at or before a month applies to it,
-  // so changing a budget never rewrites past months.
-  function dailyBudgetFor(cat, mk){
-    let amt = 0;
-    (cat.budgetHistory || []).forEach(h => { if (h.from <= mk) amt = h.amount; });
-    return amt;
-  }
-  // zero one month of a category's daily budget without changing the months around it
-  function clearDailyBudgetForMonth(cat, mk){
-    if (dailyBudgetFor(cat, mk) <= 0) return;
-    let y = +mk.slice(0,4), m = +mk.slice(5,7) + 1;
-    if (m > 12) { m = 1; y++; }
-    const nk = y + '-' + String(m).padStart(2,'0');
-    const nextAmt = dailyBudgetFor(cat, nk);
-    const hist = (cat.budgetHistory || []).filter(h => h.from !== mk);
-    hist.push({ from: mk, amount: 0 });
-    if (nextAmt > 0 && !hist.some(h => h.from === nk)) hist.push({ from: nk, amount: nextAmt });
-    hist.sort((a,b) => a.from.localeCompare(b.from));
-    cat.budgetHistory = hist;
-  }
-  function dailySpentInMonth(catId, mk){
-    return state.expenses
-      .filter(t => t.categoryId === catId && monthKeyOf(t.date) === mk)
-      .reduce((s,t) => s + t.amount, 0);
-  }
-  // unused portion for a month: per enabled category with a budget, never negative
-  function dailyExcessForMonth(mk){
-    return state.dailyCategories.filter(c => c.enabled).reduce((sum,c) => {
-      const b = dailyBudgetFor(c, mk);
-      if (b <= 0) return sum;
-      return sum + Math.max(0, b - dailySpentInMonth(c.id, mk));
-    }, 0);
-  }
-  function monthHasDailyBudget(mk){
-    return state.dailyCategories.some(c => c.enabled && dailyBudgetFor(c, mk) > 0);
-  }
-  // Jan..current month of the real current year; the current month is 'pending' until it closes
-  function excessBreakdown(){
-    const nowKey = realMonthKey();
-    const year = nowKey.slice(0,4);
-    const curM = parseInt(nowKey.slice(5,7), 10);
-    const rows = [];
-    for (let m = 1; m <= curM; m++){
-      const mk = year + '-' + String(m).padStart(2,'0');
-      if (!monthHasDailyBudget(mk)) continue;
-      rows.push({ mk, label: MONTH_NAMES[m-1] + ' ' + year, amount: dailyExcessForMonth(mk), pending: mk === nowKey });
-    }
-    return rows;
   }
   function getIncomeForMonth(mk){ return (state.incomeByMonth && state.incomeByMonth[mk]) || 0; }
 
@@ -969,42 +797,6 @@
     });
   }
 
-  // ---------- Savings category -> Savings tab link ----------
-  // A spend logged on the Savings budget category can be mirrored into a savings goal (as a contribution) or a tracker (as an entry).
-  // The category remembers the chosen destination (cat.savingsLink); each mirrored row carries spendId so deleting the spend removes it.
-  function isSavingsCategory(cat){ return !!cat && /^savings?$/i.test((cat.name || '').trim()); }
-  function savingsLinkValid(link){
-    if (!link) return false;
-    return link.type === 'goal' ? state.savingsGoals.some(g => g.id === link.id) : state.trackers.some(t => t.id === link.id);
-  }
-  function linkSpendToSavings(spend, link){
-    if (!savingsLinkValid(link)) return;
-    const entryId = uid();
-    if (link.type === 'goal') {
-      const g = state.savingsGoals.find(x => x.id === link.id);
-      g.contributions = g.contributions || [];
-      g.contributions.push({ id: entryId, date: spend.date, amount: spend.amount, spendId: spend.id });
-    } else {
-      const t = state.trackers.find(x => x.id === link.id);
-      t.entries = t.entries || [];
-      t.entries.push({ id: entryId, date: spend.date, amount: spend.amount, note: spend.note || 'From Monthly Budget', spendId: spend.id });
-    }
-    spend.link = { type: link.type, id: link.id, entryId };
-  }
-  function unlinkSpendsFromSavings(spendIds){
-    const ids = new Set(spendIds);
-    state.savingsGoals.forEach(g => { g.contributions = (g.contributions || []).filter(c => !ids.has(c.spendId)); });
-    state.trackers.forEach(t => { t.entries = (t.entries || []).filter(e => !ids.has(e.spendId)); });
-  }
-  function spendLinkLabel(e){
-    if (!e.link) return '';
-    if (e.link.type === 'goal') {
-      const g = state.savingsGoals.find(x => x.id === e.link.id);
-      return g && (g.contributions || []).some(c => c.id === e.link.entryId) ? g.name : '';
-    }
-    const t = state.trackers.find(x => x.id === e.link.id);
-    return t && (t.entries || []).some(x => x.id === e.link.entryId) ? t.name : '';
-  }
   function goalSaved(goal){ return (goal.contributions||[]).reduce((s,c)=>s+c.amount,0); }
   function goalSuggestion(goal){
     if (!goal.targetDate) return null;
@@ -1033,15 +825,8 @@
   let activeTab = 'daily';
   let expandedCatId = null;
   let expandedTrackerId = null;
-  let expandedExcess = false;
 
   // ---------- rendering ----------
-  function dailyTxMeta(t, cat, showDate){
-    const parts = [];
-    if (showDate) parts.push(new Date(t.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric'}));
-    if (cat) parts.push(cat.name);
-    return parts.length ? `<div class="meta">${escapeHtml(parts.join(' · '))}</div>` : '';
-  }
   function renderDaily(){
     const spentThisMonth = totalMonthSpent();
     const heroLabel = isViewingCurrentMonth() ? 'spent so far this month' : 'spent that month';
@@ -1057,33 +842,16 @@
       html += `<div class="empty"><b>No categories turned on.</b><br>Tap "Manage" to turn on categories like Groceries or Coffee, then tap one to log a spend against it.</div>`;
     } else {
       html += `<div class="tile-grid">`;
-      const mkTile = viewMonthKey();
       activeDailyCats.forEach(c => {
-        const b = dailyBudgetFor(c, mkTile);
-        let cls = '', note = '';
-        if (b > 0) {
-          const spent = dailySpentInMonth(c.id, mkTile);
-          const leftCents = Math.round((b - spent) * 100);
-          const budgetCents = Math.round(b * 100);
-          cls = leftCents < budgetCents * 0.2 ? ' b-low' : (leftCents < budgetCents * 0.5 ? ' b-warn' : ' b-good');
-          note = `<span class="tile-left">${leftCents < 0 ? fmt(-leftCents/100) + ' over' : fmt(leftCents/100) + ' left'}</span>`;
-        }
-        html += `<button type="button" class="cat-tile${cls}" data-log-cat="${c.id}"><span class="tile-icon">${c.icon}</span>${escapeHtml(c.name)}${note}</button>`;
+        html += `<button type="button" class="cat-tile" data-log-cat="${c.id}"><span class="tile-icon">${c.icon}</span>${escapeHtml(c.name)}</button>`;
       });
       html += `</div>`;
     }
 
-    const viewing = isViewingCurrentMonth();
-    const vdl = viewMonthDate();
-    const monthName = MONTH_NAMES[vdl.getMonth()] + ' ' + vdl.getFullYear();
-    const dayTxs = viewing
-      ? state.expenses.filter(t => t.date === todayISO()).sort((a,b)=> a.note?.localeCompare(b.note||'')||0)
-      : monthExpenses().slice().sort((a,b)=> b.date.localeCompare(a.date));
-    html += `<div class="day-detail-label">${viewing ? 'Today' : monthName}</div>`;
+    const dayTxs = state.expenses.filter(t => t.date === todayISO()).sort((a,b)=> a.note?.localeCompare(b.note||'')||0);
+    html += `<div class="day-detail-label">Today</div>`;
     if (dayTxs.length === 0) {
-      html += viewing
-        ? `<div class="empty"><b>Nothing logged today.</b><br>Tap a category above to add an expense.</div>`
-        : `<div class="empty"><b>Nothing logged in ${monthName}.</b><br>Tap a category above to add an expense to this month.</div>`;
+      html += `<div class="empty"><b>Nothing logged today.</b><br>Tap a category above to add an expense.</div>`;
     } else {
       html += `<div class="card">`;
       dayTxs.forEach(t => {
@@ -1093,7 +861,7 @@
             ${cat ? `<span class="cat-icon">${cat.icon}</span>` : ''}
             <div class="tx-main">
               <div class="note">${escapeHtml(t.note || (cat?cat.name:'Expense'))}</div>
-              ${dailyTxMeta(t, cat, !viewing)}
+              ${cat ? `<div class="meta">${escapeHtml(cat.name)}</div>` : ''}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <div class="tx-amount">${fmt(t.amount)}</div>
@@ -1157,7 +925,7 @@
     }
 
     activeBudgetCats.forEach(c => {
-      const effBudget = getCategoryBudget(c, mk) * ((c.period === 'weekly' && !isViewingCurrentMonth()) ? 4.345 : 1);
+      const effBudget = getCategoryBudget(c, mk);
       const spentP = categorySpentInPeriod(c);
       const pct = effBudget > 0 ? Math.min(100, (spentP/effBudget)*100) : (spentP>0?100:0);
       let cls = '';
@@ -1174,19 +942,20 @@
           <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
           <div class="cat-actions">
             <button class="link-btn" data-add-spend="${c.id}">+ Add spend</button>
+            ${c.linksToSavings ? `<button class="link-btn" data-add-cat-savings="${c.id}">+ To savings</button>` : ''}
             <button class="link-btn" data-toggle-entries="${c.id}">${expanded ? 'Hide entries' : 'View entries (' + entries.length + ')'}</button>
           </div>`;
       if (expanded) {
         html += `<div class="cat-entries">`;
         if (entries.length === 0) {
-          html += `<div class="empty-mini">No spend items logged for this category this month.</div>`;
+          html += `<div class="empty-mini">No spend items logged for this category yet.</div>`;
         } else {
           entries.forEach(e => {
             html += `
               <div class="tx-row">
                 <div class="tx-main">
                   <div class="note">${escapeHtml(e.note || 'Spend item')}</div>
-                  <div class="meta">${new Date(e.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}${spendLinkLabel(e) ? ' · Added to ' + escapeHtml(spendLinkLabel(e)) : ''}</div>
+                  <div class="meta">${new Date(e.date+'T00:00:00').toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                   <div class="tx-amount">${fmt(e.amount)}</div>
@@ -1283,42 +1052,6 @@
     return html;
   }
 
-  // auto-linked tracker: unused Daily budget, year to date. Lives outside #trackersList so it isn't draggable/deletable.
-  function renderExcessCard(){
-    const rows = excessBreakdown();
-    const year = realMonthKey().slice(0,4);
-    const closed = rows.filter(r => !r.pending).reduce((s,r) => s + r.amount, 0);
-    const pending = rows.find(r => r.pending);
-    let h = `
-      <div class="card tracker-card excess-card">
-        <div class="row-top"><div class="name">Excess Budget YTD<span class="freq-tag">Auto</span></div></div>
-        <div class="figures"><b>${fmt(closed)}</b> unused from closed months in ${year}</div>`;
-    if (rows.length === 0) {
-      h += `<div class="excess-pending">Set monthly budgets under the gear icon, in Daily Expense Budget. Whatever you don't spend each month lands here automatically.</div></div>`;
-      return h;
-    }
-    if (pending) {
-      h += `<div class="excess-pending">+ <b>${fmt(pending.amount)}</b> unspent so far this month. It counts once the month closes.</div>`;
-    }
-    h += `<div class="row-bottom"><button class="link-btn" data-toggle-excess="1">${expandedExcess ? 'Hide months' : 'View months (' + rows.length + ')'}</button></div>`;
-    if (expandedExcess) {
-      h += `<div class="tracker-entries">`;
-      rows.slice().reverse().forEach(r => {
-        h += `
-          <div class="tx-row">
-            <div class="tx-main">
-              <div class="note">${r.label}</div>
-              ${r.pending ? `<div class="meta">In progress, not counted yet</div>` : ''}
-            </div>
-            <div class="tx-amount" ${r.pending ? 'style="color:var(--text-dim);"' : ''}>${fmt(r.amount)}</div>
-          </div>`;
-      });
-      h += `</div>`;
-    }
-    h += `</div>`;
-    return h;
-  }
-
   function renderSavings(){
     let html = `<div class="section-title"><span>Your savings goals</span><button class="link-btn" id="newGoalLink">+ New goal</button></div>`;
     if (state.savingsGoals.length === 0) {
@@ -1339,7 +1072,10 @@
             <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
             <div class="row-bottom">
               <div class="pct">${pct.toFixed(0)}% there</div>
-              <span style="display:flex;gap:16px;"><button class="link-btn" data-edit-saved="${g.id}">Edit</button><button class="link-btn" data-add-contrib="${g.id}">+ Add</button></span>
+              <div style="display:flex; gap:14px;">
+                <button class="link-btn" data-edit-goal="${g.id}">Edit</button>
+                <button class="link-btn" data-add-contrib="${g.id}">+ Add</button>
+              </div>
             </div>
             <div class="encourage">${suggestion || goalEncouragement(pct)}</div>
           </div>`;
@@ -1348,9 +1084,8 @@
     }
 
     html += `<div class="section-title"><span>Trackers</span><button class="link-btn" id="newTrackerLink">+ New tracker</button></div>`;
-    html += renderExcessCard();
     if (state.trackers.length === 0) {
-      html += `<div class="empty"><b>No custom trackers yet.</b><br>Use a tracker for a running tally that isn't tied to a target — like the dollar value of points you've redeemed over time.</div>`;
+      html += `<div class="empty"><b>No trackers yet.</b><br>Use a tracker for a running tally that isn't tied to a target — like the dollar value of points you've redeemed over time.</div>`;
     } else {
       html += `<div id="trackersList">`;
       state.trackers.forEach(t => {
@@ -1402,9 +1137,7 @@
     const vd = viewMonthDate();
     let label = MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear();
     document.getElementById('monthLabel').textContent = label;
-    const gear = document.getElementById('settingsBtn');
-    gear.style.display = '';
-    gear.setAttribute('aria-label', 'Settings');
+    document.getElementById('settingsBtn').style.display = (activeTab === 'budget') ? '' : 'none';
     const main = document.getElementById('main');
     if (activeTab === 'daily') main.innerHTML = renderDaily();
     else if (activeTab === 'budget') main.innerHTML = renderBudget();
@@ -1475,8 +1208,7 @@
       btn.addEventListener('click', () => {
         const billId = btn.dataset.delBill;
         state.bills = state.bills.filter(b => b.id !== billId);
-        // remove any budget-spend entries that were logged from this bill (and any savings rows they created)
-        unlinkSpendsFromSavings(state.budgetSpends.filter(sp => sp.billId === billId).map(sp => sp.id));
+        // remove any budget-spend entries that were logged from this bill
         state.budgetSpends = state.budgetSpends.filter(sp => sp.billId !== billId);
         save(); render();
       });
@@ -1500,11 +1232,11 @@
         save(); render();
       });
     });
-    document.querySelectorAll('[data-edit-saved]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); openEditSavedSheet(btn.dataset.editSaved); });
-    });
     document.querySelectorAll('[data-add-contrib]').forEach(btn => {
       btn.addEventListener('click', (e) => { e.stopPropagation(); openContribSheet(btn.dataset.addContrib); });
+    });
+    document.querySelectorAll('[data-edit-goal]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openGoalSheet(btn.dataset.editGoal); });
     });
     document.querySelectorAll('[data-del-tracker]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1539,6 +1271,9 @@
     document.querySelectorAll('[data-add-spend]').forEach(btn => {
       btn.addEventListener('click', (e) => { e.stopPropagation(); openSpendSheet(btn.dataset.addSpend); });
     });
+    document.querySelectorAll('[data-add-cat-savings]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openCatSavingsSheet(btn.dataset.addCatSavings); });
+    });
     document.querySelectorAll('[data-toggle-entries]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1550,13 +1285,9 @@
     document.querySelectorAll('[data-del-spend]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        unlinkSpendsFromSavings([btn.dataset.delSpend]);
         state.budgetSpends = state.budgetSpends.filter(sp => sp.id !== btn.dataset.delSpend);
         save(); render();
       });
-    });
-    document.querySelectorAll('[data-toggle-excess]').forEach(btn => {
-      btn.addEventListener('click', () => { expandedExcess = !expandedExcess; render(); });
     });
     const editIncomeLink = document.getElementById('editIncomeLink');
     if (editIncomeLink) editIncomeLink.addEventListener('click', openIncomeSheet);
@@ -1578,7 +1309,6 @@
       activeTab = btn.dataset.tab;
       expandedCatId = null;
       expandedTrackerId = null;
-      expandedExcess = false;
       render();
     });
   });
@@ -1600,16 +1330,11 @@
   const catBackdrop = document.getElementById('catBackdrop');
   const budgetScopeBackdrop = document.getElementById('budgetScopeBackdrop');
   const spendBackdrop = document.getElementById('spendBackdrop');
+  const catSavingsBackdrop = document.getElementById('catSavingsBackdrop');
+  const funMsgBackdrop = document.getElementById('funMsgBackdrop');
   const billBackdrop = document.getElementById('billBackdrop');
   const billBudgetBackdrop = document.getElementById('billBudgetBackdrop');
   const incomeBackdrop = document.getElementById('incomeBackdrop');
-  const dailyBudgetBackdrop = document.getElementById('dailyBudgetBackdrop');
-  const settingsBackdrop = document.getElementById('settingsBackdrop');
-  const currencyBackdrop = document.getElementById('currencyBackdrop');
-  const clearBackdrop = document.getElementById('clearBackdrop');
-  const editSavedBackdrop = document.getElementById('editSavedBackdrop');
-  const monthlyBudgetBackdrop = document.getElementById('monthlyBudgetBackdrop');
-  const confirmBackdrop = document.getElementById('confirmBackdrop');
   const renameBackdrop = document.getElementById('renameBackdrop');
   const goalBackdrop = document.getElementById('goalBackdrop');
   const contribBackdrop = document.getElementById('contribBackdrop');
@@ -1618,7 +1343,12 @@
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  function showFunMessage(msg){
+    document.getElementById('funMsgText').textContent = msg;
+    openSheet(funMsgBackdrop);
+  }
+  document.getElementById('funMsgOk').addEventListener('click', () => closeSheet(funMsgBackdrop));
+  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, funMsgBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -1631,270 +1361,7 @@
     document.getElementById('incomeMonthLabel').textContent = 'For ' + MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear();
     openSheet(incomeBackdrop);
   }
-  // ---------- settings menu (gear) ----------
-  const STORE_KEY_LABEL = 'ledger-app-data-v4';
-  function setSettingsMsg(t){ document.getElementById('settingsMsg').textContent = t || ''; }
-  function openSettingsSheet(){
-    setSettingsMsg('');
-    const cur = CURRENCIES[state.currency] || CURRENCIES.USD;
-    document.getElementById('setCurrencySub').innerHTML = (cur.html || cur.symbol) + '  ·  ' + cur.short;
-    openSheet(settingsBackdrop);
-  }
-  document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
-  document.getElementById('settingsDone').addEventListener('click', () => closeSheet(settingsBackdrop));
-  document.getElementById('setBudgetRow').addEventListener('click', () => { closeSheet(settingsBackdrop); openDailyBudgetSheet(); });
-  document.getElementById('setMonthlyRow').addEventListener('click', () => { closeSheet(settingsBackdrop); openMonthlyBudgetSheet(); });
-
-  // Monthly Expense Budget: amounts for the viewed month's Budget-tab categories (same this-month / all-future-months scope as editing one category)
-  function updateMonthlyBudgetTotal(){
-    let total = 0;
-    document.querySelectorAll('#monthlyBudgetList [data-mbudget-cat]').forEach(inp => {
-      const cat = state.budgetCategories.find(c => c.id === inp.dataset.mbudgetCat);
-      total += Math.max(0, parseFloat(inp.value) || 0) * (cat && cat.period === 'weekly' ? 4.345 : 1);
-    });
-    document.getElementById('monthlyBudgetTotal').innerHTML = fmt(total);
-  }
-  function openMonthlyBudgetSheet(){
-    const mk = viewMonthKey();
-    const vd = viewMonthDate();
-    const cats = state.budgetCategories.filter(c => c.enabled);
-    document.getElementById('monthlyBudgetSub').textContent =
-      'Budget amounts for ' + MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear() + '. Weekly categories are entered per week.';
-    const list = document.getElementById('monthlyBudgetList');
-    if (cats.length === 0) {
-      list.innerHTML = `<div class="empty-mini">No budget categories are turned on. Use Manage on the Monthly Budget tab to turn some on, then set their amounts here.</div>`;
-    } else {
-      list.innerHTML = cats.map(c => {
-        const b = getCategoryBudget(c, mk);
-        return `
-          <div class="manage-row">
-            <span class="cat-icon">${c.icon}</span>
-            <span class="manage-name">${escapeHtml(c.name)}<span class="period-tag" style="font-size:10.5px;color:var(--text-dim);background:var(--surface-2);padding:2px 7px;border-radius:20px;margin-left:6px;">${c.period === 'weekly' ? 'per week' : 'monthly'}</span></span>
-            <div class="budget-input-wrap">${currencySymbol()}<input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" data-mbudget-cat="${c.id}" value="${b > 0 ? b : ''}"></div>
-          </div>`;
-      }).join('') + '<div style="height:8px;"></div>';
-      list.querySelectorAll('[data-mbudget-cat]').forEach(inp => inp.addEventListener('input', updateMonthlyBudgetTotal));
-    }
-    updateMonthlyBudgetTotal();
-    openSheet(monthlyBudgetBackdrop);
-  }
-  document.getElementById('monthlyBudgetCancel').addEventListener('click', () => closeSheet(monthlyBudgetBackdrop));
-  document.getElementById('monthlyBudgetSave').addEventListener('click', () => {
-    const mk = viewMonthKey();
-    const changes = [];
-    document.querySelectorAll('#monthlyBudgetList [data-mbudget-cat]').forEach(inp => {
-      const cat = state.budgetCategories.find(c => c.id === inp.dataset.mbudgetCat);
-      if (!cat) return;
-      const amt = Math.max(0, Math.round((parseFloat(inp.value) || 0) * 100) / 100);
-      if (Math.round(amt * 100) !== Math.round(getCategoryBudget(cat, mk) * 100)) changes.push({ catId: cat.id, amount: amt });
-    });
-    closeSheet(monthlyBudgetBackdrop);
-    if (changes.length === 0) return;
-    pendingBudgetChange = changes;
-    document.getElementById('budgetScopeLabel').textContent = 'Update ' + changes.length + (changes.length === 1 ? ' budget' : ' budgets') + ' for:';
-    openSheet(budgetScopeBackdrop);
-  });
-
-  // generic confirm sheet
-  let confirmAction = null;
-  function askConfirm(title, msg, label, action){
-    document.getElementById('confirmTitle').textContent = title;
-    document.getElementById('confirmMsg').textContent = msg;
-    document.getElementById('confirmOk').textContent = label;
-    confirmAction = action;
-    closeSheet(settingsBackdrop);
-    closeSheet(clearBackdrop);
-    openSheet(confirmBackdrop);
-  }
-  document.getElementById('confirmCancel').addEventListener('click', () => { confirmAction = null; closeSheet(confirmBackdrop); });
-  document.getElementById('confirmOk').addEventListener('click', () => {
-    const a = confirmAction; confirmAction = null;
-    closeSheet(confirmBackdrop);
-    if (a) a();
-  });
-  function resetViewState(){ viewOffset = 0; expandedCatId = null; expandedTrackerId = null; expandedExcess = false; }
-
-  // export: share sheet on touch devices (reliable in home-screen apps), file download elsewhere
-  document.getElementById('setExportRow').addEventListener('click', async () => {
-    const fname = 'ledger-backup-' + todayISO() + '.json';
-    const payload = JSON.stringify({ ledger: STORE_KEY_LABEL, exportedAt: new Date().toISOString(), data: state }, null, 2);
-    try {
-      const file = new File([payload], fname, { type: 'application/json' });
-      if (window.matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: fname });
-        setSettingsMsg('Backup ready.');
-        return;
-      }
-    } catch(e) {
-      if (e && e.name === 'AbortError') return;
-    }
-    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = fname;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setSettingsMsg('Backup downloaded as ' + fname + '.');
-  });
-
-  // import: pick a backup file, confirm, then replace everything
-  const importFile = document.getElementById('importFile');
-  document.getElementById('setImportRow').addEventListener('click', () => { setSettingsMsg(''); importFile.click(); });
-  importFile.addEventListener('change', () => {
-    const f = importFile.files && importFile.files[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      let data = null;
-      try {
-        const parsed = JSON.parse(reader.result);
-        data = (parsed && parsed.data && typeof parsed.data === 'object') ? parsed.data : parsed;
-        const ok = data && typeof data === 'object' && !Array.isArray(data) &&
-          ['expenses','dailyCategories','budgetCategories','bills','savingsGoals','trackers'].some(k => Array.isArray(data[k]));
-        if (!ok) data = null;
-      } catch(e) { data = null; }
-      importFile.value = '';
-      if (!data) { setSettingsMsg("That file isn't a Ledger backup."); return; }
-      askConfirm('Replace all data?',
-        'This replaces everything in the app with the backup (' + (data.expenses||[]).length + ' expenses, ' + (data.bills||[]).length + ' bills, ' + (data.savingsGoals||[]).length + ' savings goals). Export first if you want to keep your current data.',
-        'Replace with backup',
-        () => {
-          try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch(e) { console.error('Ledger: import failed', e); return; }
-          load(); save(); resetViewState(); render();
-        });
-    };
-    reader.readAsText(f);
-  });
-
-  // currency
-  function renderCurrencyList(){
-    const list = document.getElementById('currencyList');
-    list.innerHTML = Object.keys(CURRENCIES).map(code => {
-      const c = CURRENCIES[code];
-      return `<button type="button" class="settings-row" data-currency="${code}"><span><span class="cur-chip">${c.html || c.symbol}</span>${c.name}<small>${c.short}</small></span><i style="color:var(--accent);">${state.currency === code ? '✓' : ''}</i></button>`;
-    }).join('');
-    list.querySelectorAll('[data-currency]').forEach(b => b.addEventListener('click', () => {
-      state.currency = b.dataset.currency;
-      save(); renderCurrencyList(); render();
-    }));
-  }
-  document.getElementById('setCurrencyRow').addEventListener('click', () => { closeSheet(settingsBackdrop); renderCurrencyList(); openSheet(currencyBackdrop); });
-  document.getElementById('currencyDone').addEventListener('click', () => closeSheet(currencyBackdrop));
-
-  // clear data: everything, or a date range
-  const clearMsg = t => { document.getElementById('clearMsg').textContent = t || ''; };
-  document.getElementById('setClearRow').addEventListener('click', () => {
-    document.getElementById('clearFrom').value = '';
-    document.getElementById('clearTo').value = '';
-    clearMsg('');
-    closeSheet(settingsBackdrop);
-    openSheet(clearBackdrop);
-  });
-  document.getElementById('clearCancel').addEventListener('click', () => closeSheet(clearBackdrop));
-  document.getElementById('clearAllRow').addEventListener('click', () => {
-    askConfirm('Clear all data?',
-      'This permanently deletes every expense, budget, bill, savings goal and tracker, and resets the app to its starting categories. Your currency setting is kept. Export a backup first if you might want it back.',
-      'Clear all data',
-      () => {
-        const keepCurrency = state.currency;
-        try { localStorage.removeItem(STORE_KEY); } catch(e) { console.error('Ledger: clear failed', e); }
-        load(); state.currency = keepCurrency; save(); resetViewState(); render();
-      });
-  });
-  const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
-  document.getElementById('clearRangeBtn').addEventListener('click', () => {
-    const from = document.getElementById('clearFrom').value;
-    const to = document.getElementById('clearTo').value;
-    if (!from || !to) { clearMsg('Pick both a start and an end date.'); return; }
-    if (from > to) { clearMsg('The start date needs to be on or before the end date.'); return; }
-    const inRange = d => d >= from && d <= to;
-    // month-level data (income, budget amounts) is cleared only for months the range covers completely
-    const touchedMonths = [];
-    for (let y = +from.slice(0,4), m = +from.slice(5,7) - 1; ; ) {
-      const mk = y + '-' + String(m + 1).padStart(2,'0');
-      if (mk > to.slice(0,7)) break;
-      touchedMonths.push(mk);
-      if (++m > 11) { m = 0; y++; }
-    }
-    const wholeMonth = mk => mk + '-01' >= from && mk + '-' + String(daysInMonth(+mk.slice(0,4), +mk.slice(5,7) - 1)).padStart(2,'0') <= to;
-    const hasIncome = mk => Object.prototype.hasOwnProperty.call(state.incomeByMonth || {}, mk);
-    const hasBudget = mk => state.budgetCategories.some(c => getCategoryBudget(c, mk) > 0) || state.dailyCategories.some(c => dailyBudgetFor(c, mk) > 0);
-    const incomeMonths = touchedMonths.filter(mk => wholeMonth(mk) && hasIncome(mk));
-    const budgetMonths = touchedMonths.filter(mk => wholeMonth(mk) && hasBudget(mk));
-    const partialMonths = touchedMonths.filter(mk => !wholeMonth(mk) && (hasIncome(mk) || hasBudget(mk)));
-    const monthLbl = mk => MONTH_NAMES[+mk.slice(5,7) - 1] + ' ' + mk.slice(0,4);
-    const nExp = state.expenses.filter(t => inRange(t.date)).length;
-    const nSpend = state.budgetSpends.filter(e => inRange(e.date)).length;
-    const nContrib = state.savingsGoals.reduce((n,g) => n + (g.contributions||[]).filter(c => inRange(c.date)).length, 0);
-    const nTrack = state.trackers.reduce((n,t) => n + (t.entries||[]).filter(e => inRange(e.date)).length, 0);
-    if (nExp + nSpend + nContrib + nTrack + incomeMonths.length + budgetMonths.length === 0) { clearMsg('Nothing is dated in that range.'); return; }
-    const lbl = d => new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    const parts = [plural(nExp,'expense','expenses'), plural(nSpend,'budget spend','budget spends'), plural(nContrib,'savings contribution','savings contributions'), plural(nTrack,'tracker entry','tracker entries')];
-    if (incomeMonths.length) parts.push('income for ' + plural(incomeMonths.length, 'month', 'months'));
-    if (budgetMonths.length) parts.push('budget amounts for ' + plural(budgetMonths.length, 'month', 'months'));
-    askConfirm('Delete data in this range?',
-      'This permanently deletes ' + parts.join(', ') + ' dated ' + lbl(from) + ' to ' + lbl(to) + '. Bills and categories are kept.' + (partialMonths.length ? ' Income and budgets for ' + partialMonths.map(monthLbl).join(', ') + ' are kept because the range does not cover the whole month.' : '') + ' Export a backup first if you might want it back.',
-      'Delete this range',
-      () => {
-        state.expenses = state.expenses.filter(t => !inRange(t.date));
-        state.budgetSpends = state.budgetSpends.filter(e => !inRange(e.date));
-        state.savingsGoals.forEach(g => { g.contributions = (g.contributions||[]).filter(c => !inRange(c.date)); });
-        state.trackers.forEach(t => { t.entries = (t.entries||[]).filter(e => !inRange(e.date)); });
-        incomeMonths.forEach(mk => { delete state.incomeByMonth[mk]; });
-        budgetMonths.forEach(mk => {
-          state.budgetCategories.forEach(c => {                       // Monthly Budget: zero that month only
-            if (getCategoryBudget(c, mk) > 0) { c.overrides = c.overrides || {}; c.overrides[mk] = 0; }
-          });
-          state.dailyCategories.forEach(c => clearDailyBudgetForMonth(c, mk));
-        });
-        save(); resetViewState(); render();
-      });
-  });
-
-  // daily budgets sheet: edits apply from the real current month forward; earlier months keep their old budgets
-  function updateDailyBudgetTotal(){
-    let total = 0;
-    document.querySelectorAll('#dailyBudgetList [data-budget-cat]').forEach(inp => { total += Math.max(0, parseFloat(inp.value) || 0); });
-    document.getElementById('dailyBudgetTotal').innerHTML = fmt(total);
-  }
-  function openDailyBudgetSheet(){
-    const mk = realMonthKey();
-    const cats = state.dailyCategories.filter(c => c.enabled);
-    const now = new Date();
-    document.getElementById('dailyBudgetSub').textContent =
-      'Monthly limit per category. Leave blank for no budget. Changes apply from ' + MONTH_NAMES[now.getMonth()] + ' ' + now.getFullYear() + ' onward.';
-    const list = document.getElementById('dailyBudgetList');
-    if (cats.length === 0) {
-      list.innerHTML = `<div class="empty-mini">No categories are turned on. Use Manage on the Daily Expense tab to turn some on, then set their budgets here.</div>`;
-    } else {
-      list.innerHTML = cats.map(c => {
-        const b = dailyBudgetFor(c, mk);
-        return `
-          <div class="manage-row">
-            <span class="cat-icon">${c.icon}</span>
-            <span class="manage-name">${escapeHtml(c.name)}</span>
-            <div class="budget-input-wrap">${currencySymbol()}<input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" data-budget-cat="${c.id}" value="${b > 0 ? b : ''}"></div>
-          </div>`;
-      }).join('') + '<div style="height:8px;"></div>';
-      list.querySelectorAll('[data-budget-cat]').forEach(inp => inp.addEventListener('input', updateDailyBudgetTotal));
-    }
-    updateDailyBudgetTotal();
-    openSheet(dailyBudgetBackdrop);
-  }
-  document.getElementById('dailyBudgetCancel').addEventListener('click', () => closeSheet(dailyBudgetBackdrop));
-  document.getElementById('dailyBudgetSave').addEventListener('click', () => {
-    const mk = realMonthKey();
-    document.querySelectorAll('#dailyBudgetList [data-budget-cat]').forEach(inp => {
-      const cat = state.dailyCategories.find(c => c.id === inp.dataset.budgetCat);
-      if (!cat) return;
-      const amt = Math.max(0, Math.round((parseFloat(inp.value) || 0) * 100) / 100);
-      if (Math.round(amt * 100) === Math.round(dailyBudgetFor(cat, mk) * 100)) return;
-      cat.budgetHistory = cat.budgetHistory || [];
-      const existing = cat.budgetHistory.find(h => h.from === mk);
-      if (existing) existing.amount = amt; else cat.budgetHistory.push({ from: mk, amount: amt });
-      cat.budgetHistory.sort((a,b) => a.from.localeCompare(b.from));
-    });
-    save(); closeSheet(dailyBudgetBackdrop); render();
-  });
+  document.getElementById('settingsBtn').addEventListener('click', openIncomeSheet);
   document.getElementById('incomeCancel').addEventListener('click', () => closeSheet(incomeBackdrop));
   document.getElementById('incomeSave').addEventListener('click', () => {
     const mk = viewMonthKey();
@@ -1922,8 +1389,7 @@
     document.getElementById('txCatLabel').textContent = cat ? 'For: ' + cat.name : '';
     document.getElementById('txAmount').value = '';
     document.getElementById('txNote').value = '';
-    document.getElementById('txDate').value = defaultDateForView();
-    limitDateInputToView('txDate');
+    document.getElementById('txDate').value = todayISO();
     openSheet(txBackdrop);
   }
   document.getElementById('txCancel').addEventListener('click', () => closeSheet(txBackdrop));
@@ -1931,9 +1397,13 @@
     const amount = parseFloat(document.getElementById('txAmount').value);
     if (!amount || amount <= 0 || !txCategoryId) return;
     const note = document.getElementById('txNote').value.trim();
-    const date = clampDateToView(document.getElementById('txDate').value);
+    const date = document.getElementById('txDate').value || todayISO();
     state.expenses.push({ id: uid(), amount, note, categoryId: txCategoryId, date });
     save(); closeSheet(txBackdrop); render();
+    const cat = state.dailyCategories.find(c => c.id === txCategoryId);
+    if (cat && POPUP_TRIGGER_CATEGORIES.includes(cat.name) && amount > POPUP_TRIGGER_AMOUNT) {
+      setTimeout(() => showFunMessage(POPUP_MESSAGE), 260);
+    }
   });
 
   // manage daily categories (add / delete only)
@@ -1981,7 +1451,7 @@
   document.getElementById('addDailyCatBtn').addEventListener('click', () => {
     const name = document.getElementById('newDailyCatName').value.trim();
     if (!name) return;
-    state.dailyCategories.push({ id: uid(), name, icon: '🏷️', enabled: true, budgetHistory: [] });
+    state.dailyCategories.push({ id: uid(), name, icon: '🏷️', enabled: true });
     save(); document.getElementById('newDailyCatName').value = ''; renderDailyCatList();
   });
   document.getElementById('dailyCatDone').addEventListener('click', () => { closeSheet(dailyCatBackdrop); render(); });
@@ -2074,9 +1544,9 @@
     const mk = viewMonthKey();
     const currentEff = getCategoryBudget(cat, mk);
     if (newBudget !== currentEff) {
-      pendingBudgetChange = [{ catId: editingCatId, amount: newBudget }];
+      pendingBudgetChange = { catId: editingCatId, amount: newBudget };
       closeSheet(catBackdrop);
-      document.getElementById('budgetScopeLabel').textContent = `Set ${cat.name}'s budget to ${fmtText(newBudget)} for:`;
+      document.getElementById('budgetScopeLabel').textContent = `Set ${cat.name}'s budget to ${fmt(newBudget)} for:`;
       openSheet(budgetScopeBackdrop);
     } else {
       save(); closeSheet(catBackdrop); render();
@@ -2088,27 +1558,27 @@
     save(); closeSheet(catBackdrop); render();
   });
   document.getElementById('scopeThisMonth').addEventListener('click', () => {
-    (pendingBudgetChange || []).forEach(ch => {
-      const cat = state.budgetCategories.find(c=>c.id===ch.catId);
+    if (pendingBudgetChange) {
+      const cat = state.budgetCategories.find(c=>c.id===pendingBudgetChange.catId);
       if (cat) {
         cat.overrides = cat.overrides || {};
-        cat.overrides[viewMonthKey()] = ch.amount;
+        cat.overrides[viewMonthKey()] = pendingBudgetChange.amount;
       }
-    });
+    }
     pendingBudgetChange = null;
     save(); closeSheet(budgetScopeBackdrop); render();
   });
   document.getElementById('scopeAllFuture').addEventListener('click', () => {
-    (pendingBudgetChange || []).forEach(ch => {
-      const cat = state.budgetCategories.find(c=>c.id===ch.catId);
+    if (pendingBudgetChange) {
+      const cat = state.budgetCategories.find(c=>c.id===pendingBudgetChange.catId);
       if (cat) {
-        cat.budget = ch.amount;
+        cat.budget = pendingBudgetChange.amount;
         const mk = viewMonthKey();
         if (cat.overrides) {
           Object.keys(cat.overrides).forEach(k => { if (k >= mk) delete cat.overrides[k]; });
         }
       }
-    });
+    }
     pendingBudgetChange = null;
     save(); closeSheet(budgetScopeBackdrop); render();
   });
@@ -2119,29 +1589,14 @@
 
   // manual budget spend item sheet
   let spendCatId = null;
-  function setupSpendLinkField(cat){
-    const field = document.getElementById('spendLinkField'), hint = document.getElementById('spendLinkHint');
-    if (!isSavingsCategory(cat)) { field.style.display = 'none'; hint.style.display = 'none'; return; }
-    const cur = savingsLinkValid(cat.savingsLink) ? cat.savingsLink.type + ':' + cat.savingsLink.id : '';
-    const opt = (val, label) => `<option value="${val}" ${val === cur ? 'selected' : ''}>${escapeHtml(label)}</option>`;
-    let html = `<option value="">Don't link</option>`;
-    if (state.savingsGoals.length) html += `<optgroup label="Savings goals">${state.savingsGoals.map(g => opt('goal:' + g.id, g.name)).join('')}</optgroup>`;
-    if (state.trackers.length) html += `<optgroup label="Savings trackers">${state.trackers.map(t => opt('tracker:' + t.id, t.name)).join('')}</optgroup>`;
-    document.getElementById('spendLink').innerHTML = html;
-    hint.textContent = (state.savingsGoals.length || state.trackers.length)
-      ? 'Your choice is remembered, so future Savings spends link automatically.'
-      : 'Create a savings goal or tracker on the Savings tab first, then you can link spends to it.';
-    field.style.display = ''; hint.style.display = '';
-  }
   function openSpendSheet(catId){
     spendCatId = catId;
     const cat = state.budgetCategories.find(c => c.id === catId);
     document.getElementById('spendCatLabel').textContent = cat ? 'For: ' + cat.name : '';
     document.getElementById('spendAmount').value = '';
     document.getElementById('spendNote').value = '';
-    document.getElementById('spendDate').value = defaultDateForView();
-    limitDateInputToView('spendDate');
-    setupSpendLinkField(cat);
+    const vd = viewMonthDate();
+    document.getElementById('spendDate').value = isViewingCurrentMonth() ? todayISO() : (vd.getFullYear()+'-'+String(vd.getMonth()+1).padStart(2,'0')+'-01');
     openSheet(spendBackdrop);
   }
   document.getElementById('spendCancel').addEventListener('click', () => closeSheet(spendBackdrop));
@@ -2149,16 +1604,37 @@
     const amount = parseFloat(document.getElementById('spendAmount').value);
     if (!amount || amount <= 0 || !spendCatId) return;
     const note = document.getElementById('spendNote').value.trim();
-    const date = clampDateToView(document.getElementById('spendDate').value);
-    const spend = { id: uid(), categoryId: spendCatId, amount, note, date };
-    const spendCat = state.budgetCategories.find(c => c.id === spendCatId);
-    if (isSavingsCategory(spendCat)) {
-      const val = document.getElementById('spendLink').value;   // '' | 'goal:ID' | 'tracker:ID'
-      spendCat.savingsLink = val ? { type: val.split(':')[0], id: val.split(':')[1] } : null;
-      if (spendCat.savingsLink) linkSpendToSavings(spend, spendCat.savingsLink);
-    }
-    state.budgetSpends.push(spend);
+    const date = document.getElementById('spendDate').value || todayISO();
+    state.budgetSpends.push({ id: uid(), categoryId: spendCatId, amount, note, date });
     save(); closeSheet(spendBackdrop); expandedCatId = spendCatId; render();
+  });
+
+  // category -> savings goal link (e.g. Investments, Savings, RRSP): counts as both a
+  // budget spend for the category and a contribution toward the chosen goal
+  let catSavingsSourceCatId = null;
+  function openCatSavingsSheet(catId){
+    if (state.savingsGoals.length === 0) { openGoalSheet(); return; }
+    catSavingsSourceCatId = catId;
+    const cat = state.budgetCategories.find(c => c.id === catId);
+    document.getElementById('catSavingsLabel').textContent = cat ? 'From: ' + cat.name : '';
+    const sel = document.getElementById('catSavingsGoal');
+    sel.innerHTML = state.savingsGoals.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+    document.getElementById('catSavingsAmount').value = '';
+    document.getElementById('catSavingsDate').value = todayISO();
+    openSheet(catSavingsBackdrop);
+  }
+  document.getElementById('catSavingsCancel').addEventListener('click', () => closeSheet(catSavingsBackdrop));
+  document.getElementById('catSavingsSave').addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('catSavingsAmount').value);
+    const goalId = document.getElementById('catSavingsGoal').value;
+    const date = document.getElementById('catSavingsDate').value || todayISO();
+    if (!amount || amount <= 0 || !catSavingsSourceCatId || !goalId) return;
+    const cat = state.budgetCategories.find(c => c.id === catSavingsSourceCatId);
+    const goal = state.savingsGoals.find(g => g.id === goalId);
+    if (!cat || !goal) return;
+    state.budgetSpends.push({ id: uid(), categoryId: cat.id, amount, note: 'To ' + goal.name, date, goalId: goal.id });
+    goal.contributions.push({ id: uid(), date, amount, fromCategoryId: cat.id });
+    save(); closeSheet(catSavingsBackdrop); expandedCatId = cat.id; render();
   });
 
   // bill sheet
@@ -2190,7 +1666,7 @@
     const enabledCats = state.budgetCategories.filter(c => c.enabled);
     if (enabledCats.length === 0) { openCatSheet(null); return; }
     billBudgetSourceId = billId;
-    document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmtText(bill.amount);
+    document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmt(bill.amount);
     const sel = document.getElementById('billBudgetCategory');
     sel.innerHTML = enabledCats.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name)}</option>`).join('');
     document.getElementById('billBudgetAmount').value = bill.amount;
@@ -2204,27 +1680,30 @@
     const amount = parseFloat(document.getElementById('billBudgetAmount').value);
     const date = document.getElementById('billBudgetDate').value || todayISO();
     if (!amount || amount <= 0 || !categoryId) return;
-    const billSpend = { id: uid(), categoryId, amount, note: bill ? bill.name : 'Bill', date, billId: billBudgetSourceId };
-    const billCat = state.budgetCategories.find(c => c.id === categoryId);
-    if (isSavingsCategory(billCat) && billCat.savingsLink) linkSpendToSavings(billSpend, billCat.savingsLink);
-    state.budgetSpends.push(billSpend);
+    state.budgetSpends.push({ id: uid(), categoryId, amount, note: bill ? bill.name : 'Bill', date, billId: billBudgetSourceId });
     save(); closeSheet(billBudgetBackdrop); render();
   });
 
   // goal sheet
   let goalFreq = 'weekly';
+  let editingGoalId = null;
   document.querySelectorAll('#goalFreqSeg button').forEach(b => {
     b.addEventListener('click', () => { goalFreq = b.dataset.freq; syncGoalFreqSeg(); });
   });
   function syncGoalFreqSeg(){
     document.querySelectorAll('#goalFreqSeg button').forEach(b => b.classList.toggle('on', b.dataset.freq===goalFreq));
   }
-  function openGoalSheet(){
-    document.getElementById('goalName').value = '';
-    document.getElementById('goalTarget').value = '';
-    document.getElementById('goalDate').value = '';
-    goalFreq = 'weekly';
+  function openGoalSheet(goalId){
+    editingGoalId = goalId || null;
+    const goal = editingGoalId ? state.savingsGoals.find(g => g.id === editingGoalId) : null;
+    document.getElementById('goalSheetTitle').textContent = goal ? 'Edit savings goal' : 'New savings goal';
+    document.getElementById('goalSave').textContent = goal ? 'Save changes' : 'Create goal';
+    document.getElementById('goalName').value = goal ? goal.name : '';
+    document.getElementById('goalTarget').value = goal ? goal.target : '';
+    document.getElementById('goalDate').value = goal && goal.targetDate ? goal.targetDate : '';
+    goalFreq = goal ? (goal.frequency || 'weekly') : 'weekly';
     syncGoalFreqSeg();
+    document.getElementById('goalDelete').style.display = goal ? 'block' : 'none';
     openSheet(goalBackdrop);
   }
   document.getElementById('goalCancel').addEventListener('click', () => closeSheet(goalBackdrop));
@@ -2233,31 +1712,17 @@
     const target = parseFloat(document.getElementById('goalTarget').value);
     const targetDate = document.getElementById('goalDate').value || null;
     if (!name || !target || target <= 0) return;
-    state.savingsGoals.push({ id: uid(), name, target, targetDate, frequency: goalFreq, contributions: [] });
+    if (editingGoalId) {
+      const goal = state.savingsGoals.find(g => g.id === editingGoalId);
+      if (goal) { goal.name = name; goal.target = target; goal.targetDate = targetDate; goal.frequency = goalFreq; }
+    } else {
+      state.savingsGoals.push({ id: uid(), name, target, targetDate, frequency: goalFreq, contributions: [] });
+    }
     save(); closeSheet(goalBackdrop); render();
   });
-
-  // edit the total already saved toward a goal; the difference is stored as a dated adjustment so history stays intact
-  let editSavedGoalId = null;
-  function openEditSavedSheet(goalId){
-    const g = state.savingsGoals.find(x => x.id === goalId);
-    if (!g) return;
-    editSavedGoalId = goalId;
-    document.getElementById('editSavedLabel').textContent = 'For: ' + g.name;
-    document.getElementById('editSavedAmount').value = Math.round(goalSaved(g) * 100) / 100;
-    openSheet(editSavedBackdrop);
-  }
-  document.getElementById('editSavedCancel').addEventListener('click', () => closeSheet(editSavedBackdrop));
-  document.getElementById('editSavedSave').addEventListener('click', () => {
-    const g = state.savingsGoals.find(x => x.id === editSavedGoalId);
-    const raw = parseFloat(document.getElementById('editSavedAmount').value);
-    if (!g || isNaN(raw)) return;
-    const diffCents = Math.round(Math.max(0, raw) * 100) - Math.round(goalSaved(g) * 100);
-    if (diffCents !== 0) {
-      g.contributions = g.contributions || [];
-      g.contributions.push({ id: uid(), date: todayISO(), amount: diffCents / 100, adjustment: true });
-    }
-    save(); closeSheet(editSavedBackdrop); render();
+  document.getElementById('goalDelete').addEventListener('click', () => {
+    state.savingsGoals = state.savingsGoals.filter(g => g.id !== editingGoalId);
+    save(); closeSheet(goalBackdrop); render();
   });
 
   function openContribSheet(goalId){
