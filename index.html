@@ -212,7 +212,7 @@
   .cat-row .period-tag { font-size: 10.5px; color: var(--text-dim); background: var(--surface-2); padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
   .cat-row .figures { font-size: 13px; color: var(--text-dim); white-space:nowrap; }
   .cat-row .figures b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; font-size: 14px; }
-  .cat-actions { display: flex; gap: 14px; margin-top: 10px; }
+  .cat-actions { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .cat-entries { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
   .cat-entries .empty-mini { font-size: 12.5px; color: var(--text-dim); }
 
@@ -271,6 +271,11 @@
     z-index: 50; opacity: 0; pointer-events: none; transition: opacity .18s;
   }
   .sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+  .sheet-backdrop.center-modal { align-items: center; padding: 24px; }
+  .sheet-backdrop.center-modal .sheet {
+    border-radius: 18px; max-width: 320px; text-align: center;
+    padding: 30px 22px calc(26px + env(safe-area-inset-bottom));
+  }
   .sheet {
     background: var(--bg); width: 100%; max-width: 480px;
     border-radius: 18px 18px 0 0; padding: 18px 20px calc(24px + env(safe-area-inset-bottom));
@@ -607,7 +612,7 @@
 <div class="sheet-backdrop" id="goalBackdrop">
   <div class="sheet">
     <div class="handle"></div>
-    <h2>New savings goal</h2>
+    <h2 id="goalSheetTitle">New savings goal</h2>
     <label class="field"><span>What are you saving for</span>
       <input type="text" id="goalName" placeholder="e.g. Emergency fund">
     </label>
@@ -626,6 +631,7 @@
     </label>
     <button class="btn-primary" id="goalSave">Create goal</button>
     <button class="btn-secondary" id="goalCancel">Cancel</button>
+    <button class="btn-danger-link" id="goalDelete" style="display:none;">Delete goal</button>
   </div>
 </div>
 
@@ -693,10 +699,29 @@
   </div>
 </div>
 
-<!-- Fun pop-up message -->
-<div class="sheet-backdrop" id="funMsgBackdrop">
-  <div class="sheet" style="text-align:center;">
+<!-- Route a budget category's spend into a savings goal / tracker -->
+<div class="sheet-backdrop" id="catSavingsBackdrop">
+  <div class="sheet">
     <div class="handle"></div>
+    <h2>Add to savings</h2>
+    <div class="sub-label" id="catSavingsLabel"></div>
+    <label class="field"><span>Goal or tracker</span>
+      <select id="catSavingsGoal"></select>
+    </label>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="catSavingsAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Date</span>
+      <input type="date" id="catSavingsDate">
+    </label>
+    <button class="btn-primary" id="catSavingsSave">Save</button>
+    <button class="btn-secondary" id="catSavingsCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Centered fun-message pop-up -->
+<div class="sheet-backdrop center-modal" id="funMsgBackdrop">
+  <div class="sheet">
     <div style="font-size:32px; margin-bottom:8px;">✨</div>
     <div id="funMsgText" style="font-size:15px; line-height:1.5; margin-bottom:18px;"></div>
     <button class="btn-primary" id="funMsgOk">Puede nang mangarap!</button>
@@ -1184,6 +1209,7 @@
           <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
           <div class="cat-actions">
             <button class="link-btn" data-add-spend="${c.id}">+ Add spend</button>
+            ${(c.linksToSavings || isSavingsCategory(c)) ? `<button class="link-btn" data-add-cat-savings="${c.id}">+ To savings</button>` : ''}
             <button class="link-btn" data-toggle-entries="${c.id}">${expanded ? 'Hide entries' : 'View entries (' + entries.length + ')'}</button>
           </div>`;
       if (expanded) {
@@ -1349,7 +1375,7 @@
             <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
             <div class="row-bottom">
               <div class="pct">${pct.toFixed(0)}% there</div>
-              <span style="display:flex;gap:16px;"><button class="link-btn" data-edit-saved="${g.id}">Edit</button><button class="link-btn" data-add-contrib="${g.id}">+ Add</button></span>
+              <span style="display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;"><button class="link-btn" data-edit-goal="${g.id}">Edit goal</button><button class="link-btn" data-edit-saved="${g.id}">Edit saved</button><button class="link-btn" data-add-contrib="${g.id}">+ Add</button></span>
             </div>
             <div class="encourage">${suggestion || goalEncouragement(pct)}</div>
           </div>`;
@@ -1510,6 +1536,12 @@
         save(); render();
       });
     });
+    document.querySelectorAll('[data-edit-goal]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openGoalSheet(btn.dataset.editGoal); });
+    });
+    document.querySelectorAll('[data-add-cat-savings]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openCatSavingsSheet(btn.dataset.addCatSavings); });
+    });
     document.querySelectorAll('[data-edit-saved]').forEach(btn => {
       btn.addEventListener('click', (e) => { e.stopPropagation(); openEditSavedSheet(btn.dataset.editSaved); });
     });
@@ -1621,6 +1653,7 @@
   const monthlyBudgetBackdrop = document.getElementById('monthlyBudgetBackdrop');
   const confirmBackdrop = document.getElementById('confirmBackdrop');
   const funMsgBackdrop = document.getElementById('funMsgBackdrop');
+  const catSavingsBackdrop = document.getElementById('catSavingsBackdrop');
   const renameBackdrop = document.getElementById('renameBackdrop');
   const goalBackdrop = document.getElementById('goalBackdrop');
   const contribBackdrop = document.getElementById('contribBackdrop');
@@ -1629,7 +1662,7 @@
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billBudgetBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -2186,6 +2219,44 @@
     save(); closeSheet(spendBackdrop); expandedCatId = spendCatId; render();
   });
 
+  // "+ To savings" shortcut on Savings / Investments / RRSP: one entry that counts as a budget spend for the
+  // category AND as a contribution to the chosen goal or tracker (same linking as the Add spend sheet)
+  let catSavingsSourceCatId = null;
+  function openCatSavingsSheet(catId){
+    const cat = state.budgetCategories.find(c => c.id === catId);
+    if (!cat) return;
+    if (state.savingsGoals.length === 0 && state.trackers.length === 0) { openGoalSheet(); return; }
+    catSavingsSourceCatId = catId;
+    document.getElementById('catSavingsLabel').textContent = 'From: ' + cat.name;
+    const cur = savingsLinkValid(cat.savingsLink) ? cat.savingsLink.type + ':' + cat.savingsLink.id : '';
+    const opt = (val, label) => `<option value="${val}" ${val === cur ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+    let html = '';
+    if (state.savingsGoals.length) html += `<optgroup label="Savings goals">${state.savingsGoals.map(g => opt('goal:' + g.id, g.name)).join('')}</optgroup>`;
+    if (state.trackers.length) html += `<optgroup label="Savings trackers">${state.trackers.map(t => opt('tracker:' + t.id, t.name)).join('')}</optgroup>`;
+    document.getElementById('catSavingsGoal').innerHTML = html;
+    document.getElementById('catSavingsAmount').value = '';
+    document.getElementById('catSavingsDate').value = defaultDateForView();
+    limitDateInputToView('catSavingsDate');
+    openSheet(catSavingsBackdrop);
+  }
+  document.getElementById('catSavingsCancel').addEventListener('click', () => closeSheet(catSavingsBackdrop));
+  document.getElementById('catSavingsSave').addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('catSavingsAmount').value);
+    const val = document.getElementById('catSavingsGoal').value;   // 'goal:ID' | 'tracker:ID'
+    if (!amount || amount <= 0 || !catSavingsSourceCatId || !val) return;
+    const cat = state.budgetCategories.find(c => c.id === catSavingsSourceCatId);
+    if (!cat) return;
+    const link = { type: val.split(':')[0], id: val.split(':')[1] };
+    if (!savingsLinkValid(link)) return;
+    const target = link.type === 'goal' ? state.savingsGoals.find(g => g.id === link.id) : state.trackers.find(t => t.id === link.id);
+    const date = clampDateToView(document.getElementById('catSavingsDate').value);
+    const spend = { id: uid(), categoryId: cat.id, amount, note: 'To ' + target.name, date };
+    linkSpendToSavings(spend, link);
+    cat.savingsLink = link;                                          // remembered for the Add spend sheet too
+    state.budgetSpends.push(spend);
+    save(); closeSheet(catSavingsBackdrop); expandedCatId = cat.id; render();
+  });
+
   // bill sheet
   let billRepeat = 'monthly';
   document.querySelectorAll('#billRepeatSeg button').forEach(b => {
@@ -2244,12 +2315,18 @@
   function syncGoalFreqSeg(){
     document.querySelectorAll('#goalFreqSeg button').forEach(b => b.classList.toggle('on', b.dataset.freq===goalFreq));
   }
-  function openGoalSheet(){
-    document.getElementById('goalName').value = '';
-    document.getElementById('goalTarget').value = '';
-    document.getElementById('goalDate').value = '';
-    goalFreq = 'weekly';
+  let editingGoalId = null;
+  function openGoalSheet(goalId){
+    editingGoalId = goalId || null;
+    const goal = editingGoalId ? state.savingsGoals.find(g => g.id === editingGoalId) : null;
+    document.getElementById('goalSheetTitle').textContent = goal ? 'Edit savings goal' : 'New savings goal';
+    document.getElementById('goalSave').textContent = goal ? 'Save changes' : 'Create goal';
+    document.getElementById('goalName').value = goal ? goal.name : '';
+    document.getElementById('goalTarget').value = goal ? goal.target : '';
+    document.getElementById('goalDate').value = goal && goal.targetDate ? goal.targetDate : '';
+    goalFreq = goal ? (goal.frequency || 'weekly') : 'weekly';
     syncGoalFreqSeg();
+    document.getElementById('goalDelete').style.display = goal ? 'block' : 'none';
     openSheet(goalBackdrop);
   }
   document.getElementById('goalCancel').addEventListener('click', () => closeSheet(goalBackdrop));
@@ -2258,7 +2335,16 @@
     const target = parseFloat(document.getElementById('goalTarget').value);
     const targetDate = document.getElementById('goalDate').value || null;
     if (!name || !target || target <= 0) return;
-    state.savingsGoals.push({ id: uid(), name, target, targetDate, frequency: goalFreq, contributions: [] });
+    if (editingGoalId) {
+      const goal = state.savingsGoals.find(g => g.id === editingGoalId);
+      if (goal) { goal.name = name; goal.target = target; goal.targetDate = targetDate; goal.frequency = goalFreq; }
+    } else {
+      state.savingsGoals.push({ id: uid(), name, target, targetDate, frequency: goalFreq, contributions: [] });
+    }
+    save(); closeSheet(goalBackdrop); render();
+  });
+  document.getElementById('goalDelete').addEventListener('click', () => {
+    state.savingsGoals = state.savingsGoals.filter(g => g.id !== editingGoalId);
     save(); closeSheet(goalBackdrop); render();
   });
 
