@@ -699,7 +699,7 @@
     <div class="handle"></div>
     <div style="font-size:32px; margin-bottom:8px;">✨</div>
     <div id="funMsgText" style="font-size:15px; line-height:1.5; margin-bottom:18px;"></div>
-    <button class="btn-primary" id="funMsgOk">Okay</button>
+    <button class="btn-primary" id="funMsgOk">Puede nang mangarap!</button>
   </div>
 </div>
 
@@ -1941,8 +1941,10 @@
   const POPUP_TRIGGER_CATEGORIES = ['Food & Drink', 'Self-care', 'Shopping'];
   const POPUP_TRIGGER_AMOUNT = 50;
   const POPUP_MESSAGE = "Mayro'n din naman palang ganda ang buhay!";
+  const POPUP_BUTTON_LABEL = "Puede nang mangarap!";
   function showFunMessage(msg){
     document.getElementById('funMsgText').textContent = msg;
+    document.getElementById('funMsgOk').textContent = POPUP_BUTTON_LABEL;
     openSheet(funMsgBackdrop);
   }
   document.getElementById('funMsgOk').addEventListener('click', () => closeSheet(funMsgBackdrop));
