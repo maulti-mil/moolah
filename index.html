@@ -41,6 +41,14 @@
     --text: #F2EEE3; --text-dim: #A7B0C8; --border: rgba(242,238,227,0.12);
     --shadow: 0 1px 2px rgba(0,0,0,0.3); color-scheme: dark;
   }
+  :root[data-theme="barbie"] {
+    --bg: #FFE4F1; --surface: #FFFFFF; --surface-2: #FFD3EA;
+    --accent: #E0218A; --accent-soft: rgba(224,33,138,0.14);
+    --good: #16A085; --good-soft: rgba(22,160,133,0.14);
+    --bad: #D6336C; --bad-soft: rgba(214,51,108,0.14); --orange: #FF7AB6;
+    --text: #7A1054; --text-dim: #B0559B; --border: rgba(224,33,138,0.18);
+    --shadow: 0 1px 2px rgba(224,33,138,0.15); color-scheme: light;
+  }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -528,6 +536,7 @@
       <button type="button" class="settings-row" id="setBudgetRow"><span>Daily Expense Budget<small>Monthly limit for each daily category</small></span><i>›</i></button>
       <button type="button" class="settings-row" id="setMonthlyRow"><span>Monthly Expense Budget<small>Budget amounts for your Monthly Budget categories</small></span><i>›</i></button>
       <button type="button" class="settings-row" id="setCurrencyRow"><span>Currency<small id="setCurrencySub"></small></span><i>›</i></button>
+      <button type="button" class="settings-row" id="setThemeRow"><span>Themes<small id="setThemeSub"></small></span><i>›</i></button>
     </div>
     <div class="section-title" style="margin-top:4px;"><span>Data</span></div>
     <div class="settings-group">
@@ -562,6 +571,17 @@
     <div class="sub-label">Changes the symbol shown across the app. Existing amounts are not converted.</div>
     <div class="settings-group" id="currencyList"></div>
     <button class="btn-secondary" id="currencyDone">Done</button>
+  </div>
+</div>
+
+<!-- Themes (from Settings) -->
+<div class="sheet-backdrop" id="themesBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Themes</h2>
+    <div class="sub-label">Changes the look of the app.</div>
+    <div class="settings-group" id="themesList"></div>
+    <button class="btn-secondary" id="themesDone">Done</button>
   </div>
 </div>
 
@@ -781,6 +801,15 @@
     AED: { symbol: 'AED', html: '<span class="aed-sym" role="img" aria-label="AED"></span>', name: 'UAE dirham', short: 'AED' },
     PHP: { symbol: '₱',    name: 'Philippine peso',      short: 'PHP' }
   };
+  const THEMES = {
+    default: { name: 'Default', emoji: '🎨' },
+    barbie:  { name: 'Barbie',  emoji: '💖' }
+  };
+  function applyTheme(){
+    const t = (state && THEMES[state.theme]) ? state.theme : 'default';
+    if (t === 'default') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+  }
   function currentCurrency(){ return CURRENCIES[state && state.currency] || CURRENCIES.USD; }
   function currencySymbol(){ const c = currentCurrency(); return c.html || c.symbol; }   // HTML: for innerHTML only
   function fmtNumber(n){ return Math.abs(Math.round(n*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -837,6 +866,7 @@
     }
     if (!state.ledgerName) state.ledgerName = 'Ledger';
     if (!CURRENCIES[state.currency]) state.currency = 'USD';
+    if (!THEMES[state.theme]) state.theme = 'default';
     // migrate from the earlier single shared category list, if present
     if (!state.dailyCategories && !state.budgetCategories && Array.isArray(state.categories)) {
       state.budgetCategories = state.categories.map(c => ({ id: c.id, name: c.name, budget: c.budget||0, period: c.period||'monthly', overrides: {} }));
@@ -1786,6 +1816,7 @@
   const dailyBudgetBackdrop = document.getElementById('dailyBudgetBackdrop');
   const settingsBackdrop = document.getElementById('settingsBackdrop');
   const currencyBackdrop = document.getElementById('currencyBackdrop');
+  const themesBackdrop = document.getElementById('themesBackdrop');
   const clearBackdrop = document.getElementById('clearBackdrop');
   const editSavedBackdrop = document.getElementById('editSavedBackdrop');
   const monthlyBudgetBackdrop = document.getElementById('monthlyBudgetBackdrop');
@@ -1800,7 +1831,7 @@
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billScopeBackdrop, billPayBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billScopeBackdrop, billPayBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, themesBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -1820,6 +1851,8 @@
     setSettingsMsg('');
     const cur = CURRENCIES[state.currency] || CURRENCIES.USD;
     document.getElementById('setCurrencySub').innerHTML = (cur.html || cur.symbol) + '  ·  ' + cur.short;
+    const th = THEMES[state.theme] || THEMES.default;
+    document.getElementById('setThemeSub').textContent = th.emoji + '  ' + th.name;
     openSheet(settingsBackdrop);
   }
   document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
@@ -1962,6 +1995,23 @@
   document.getElementById('setCurrencyRow').addEventListener('click', () => { closeSheet(settingsBackdrop); renderCurrencyList(); openSheet(currencyBackdrop); });
   document.getElementById('currencyDone').addEventListener('click', () => closeSheet(currencyBackdrop));
 
+  // themes
+  function renderThemesList(){
+    const list = document.getElementById('themesList');
+    list.innerHTML = Object.keys(THEMES).map(code => {
+      const t = THEMES[code];
+      return `<button type="button" class="settings-row" data-theme-opt="${code}"><span><span class="cur-chip">${t.emoji}</span>${t.name}</span><i style="color:var(--accent);">${state.theme === code ? '✓' : ''}</i></button>`;
+    }).join('');
+    list.querySelectorAll('[data-theme-opt]').forEach(b => b.addEventListener('click', () => {
+      state.theme = b.dataset.themeOpt;
+      save(); applyTheme(); renderThemesList();
+      const th = THEMES[state.theme] || THEMES.default;
+      document.getElementById('setThemeSub').textContent = th.emoji + '  ' + th.name;
+    }));
+  }
+  document.getElementById('setThemeRow').addEventListener('click', () => { closeSheet(settingsBackdrop); renderThemesList(); openSheet(themesBackdrop); });
+  document.getElementById('themesDone').addEventListener('click', () => closeSheet(themesBackdrop));
+
   // clear data: everything, or a date range
   const clearMsg = t => { document.getElementById('clearMsg').textContent = t || ''; };
   document.getElementById('setClearRow').addEventListener('click', () => {
@@ -1978,8 +2028,9 @@
       'Clear all data',
       () => {
         const keepCurrency = state.currency;
+        const keepTheme = state.theme;
         try { localStorage.removeItem(STORE_KEY); } catch(e) { console.error('Ledger: clear failed', e); }
-        load(); state.currency = keepCurrency; save(); resetViewState(); render();
+        load(); state.currency = keepCurrency; state.theme = keepTheme; save(); applyTheme(); resetViewState(); render();
       });
   });
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
@@ -2644,6 +2695,7 @@
 
   // ---------- init ----------
   load();
+  applyTheme();
   render();
 })();
 </script>
