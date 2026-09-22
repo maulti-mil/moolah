@@ -1221,13 +1221,11 @@
     const viewing = isViewingCurrentMonth();
     const vdl = viewMonthDate();
     const monthName = MONTH_NAMES[vdl.getMonth()] + ' ' + vdl.getFullYear();
-    const dayTxs = viewing
-      ? state.expenses.filter(t => t.date === todayISO()).sort((a,b)=> a.note?.localeCompare(b.note||'')||0)
-      : monthExpenses().slice().sort((a,b)=> b.date.localeCompare(a.date));
-    html += `<div class="day-detail-label">${viewing ? 'Today' : monthName}</div>`;
+    const dayTxs = monthExpenses().slice().sort((a,b)=> b.date.localeCompare(a.date) || (a.note||'').localeCompare(b.note||''));
+    html += `<div class="day-detail-label">${viewing ? 'This month' : monthName}</div>`;
     if (dayTxs.length === 0) {
       html += viewing
-        ? `<div class="empty"><b>Nothing logged today.</b><br>Tap a category above to add an expense.</div>`
+        ? `<div class="empty"><b>Nothing logged this month.</b><br>Tap a category above to add an expense.</div>`
         : `<div class="empty"><b>Nothing logged in ${monthName}.</b><br>Tap a category above to add an expense to this month.</div>`;
     } else {
       html += `<div class="card">`;
@@ -1238,7 +1236,7 @@
             ${cat ? `<span class="cat-icon">${cat.icon}</span>` : ''}
             <div class="tx-main">
               <div class="note">${escapeHtml(t.note || (cat?cat.name:'Expense'))}</div>
-              ${dailyTxMeta(t, cat, !viewing)}
+              ${dailyTxMeta(t, cat, true)}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <div class="tx-amount">${fmt(t.amount)}</div>
@@ -1458,7 +1456,20 @@
     if (upcoming.length === 0) {
       html += `<div class="empty-mini">Nothing upcoming.</div>`;
     } else {
-      html += `<div class="card">` + upcoming.map(renderBillItem).join('') + `</div>`;
+      const byMonth = {};
+      const monthOrder = [];
+      upcoming.forEach(b => {
+        const mk = monthKeyOf(b.dueDate);
+        if (!byMonth[mk]) { byMonth[mk] = []; monthOrder.push(mk); }
+        byMonth[mk].push(b);
+      });
+      monthOrder.forEach(mk => {
+        const [y, m] = mk.split('-').map(Number);
+        const label = MONTH_NAMES[m-1] + ' ' + y;
+        const subtotal = byMonth[mk].reduce((s, b) => s + remainingBalance(b), 0);
+        html += `<div class="day-detail-label">${label} <span style="float:right;">${fmt(subtotal)}</span></div>`;
+        html += `<div class="card">` + byMonth[mk].map(renderBillItem).join('') + `</div>`;
+      });
     }
     if (paid.length > 0) {
       html += `<div class="section-title"><span>Paid</span></div>`;
@@ -2161,7 +2172,10 @@
   }
   document.getElementById('txCancel').addEventListener('click', () => closeSheet(txBackdrop));
   const POPUP_TRIGGER_CATEGORIES = ['Food & Drink', 'Self-care', 'Shopping'];
-  const POPUP_TRIGGER_AMOUNT = 50;
+  const POPUP_TRIGGER_AMOUNT_BY_CURRENCY = { USD: 50, AED: 50, PHP: 500 };
+  function popupTriggerAmount(){
+    return POPUP_TRIGGER_AMOUNT_BY_CURRENCY[state.currency] ?? 50;
+  }
   const POPUP_MESSAGE = "Mayro'n din naman palang ganda ang buhay!";
   const POPUP_BUTTON_LABEL = "Puede nang mangarap!";
   function showFunMessage(msg){
@@ -2178,7 +2192,7 @@
     state.expenses.push({ id: uid(), amount, note, categoryId: txCategoryId, date });
     save(); closeSheet(txBackdrop); render();
     const cat = state.dailyCategories.find(c => c.id === txCategoryId);
-    if (cat && POPUP_TRIGGER_CATEGORIES.includes(cat.name) && amount > POPUP_TRIGGER_AMOUNT) {
+    if (cat && POPUP_TRIGGER_CATEGORIES.includes(cat.name) && amount > popupTriggerAmount()) {
       setTimeout(() => showFunMessage(POPUP_MESSAGE), 260);
     }
   });
