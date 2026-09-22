@@ -492,28 +492,30 @@
         <button type="button" data-repeat="monthly">Monthly</button>
       </div>
     </label>
+    <label class="field"><span>Budget category</span>
+      <select id="billBudgetCategory"></select>
+    </label>
+    <div class="sub-label" style="margin:-6px 0 14px;">Payments toward this bill are automatically logged as a spend against this category.</div>
     <button class="btn-primary" id="billSave">Save bill</button>
     <button class="btn-secondary" id="billCancel">Cancel</button>
   </div>
 </div>
 
-<!-- Add a bill's amount into the Budget tab's spent totals -->
-<div class="sheet-backdrop" id="billBudgetBackdrop">
+<!-- Log a bill payment: creates the linked budget spend automatically -->
+<div class="sheet-backdrop" id="billPayBackdrop">
   <div class="sheet">
     <div class="handle"></div>
-    <h2>Add to budget spend</h2>
-    <div class="sub-label" id="billBudgetLabel"></div>
-    <label class="field"><span>Budget category</span>
-      <select id="billBudgetCategory"></select>
-    </label>
+    <h2>Log a payment</h2>
+    <div class="sub-label" id="billPayLabel"></div>
     <label class="field"><span>Amount</span>
-      <input type="number" id="billBudgetAmount" inputmode="decimal" step="0.01">
+      <input type="number" id="billPayAmount" inputmode="decimal" step="0.01" min="0">
     </label>
+    <div class="sub-label" id="billPayHint" style="margin:-6px 0 14px;"></div>
     <label class="field"><span>Date</span>
-      <input type="date" id="billBudgetDate">
+      <input type="date" id="billPayDate">
     </label>
-    <button class="btn-primary" id="billBudgetSave">Add to budget</button>
-    <button class="btn-secondary" id="billBudgetCancel">Cancel</button>
+    <button class="btn-primary" id="billPaySave">Log payment</button>
+    <button class="btn-secondary" id="billPayCancel">Cancel</button>
   </div>
 </div>
 
@@ -868,6 +870,8 @@
       if (typeof b.amount !== 'number' || isNaN(b.amount)) b.amount = 0;
       if (!b.overrides || typeof b.overrides !== 'object') b.overrides = {};
       if (!Array.isArray(b.history)) b.history = [];
+      if (typeof b.paidSoFar !== 'number' || isNaN(b.paidSoFar)) b.paidSoFar = 0;
+      if (typeof b.budgetCategoryId === 'undefined') b.budgetCategoryId = null;
     });
     normalizeBills();
     if (!state.savingsGoals) state.savingsGoals = [];
@@ -1011,6 +1015,7 @@
     return (o && Object.prototype.hasOwnProperty.call(o, b.dueDate)) ? o[b.dueDate] : (b.amount || 0);
   }
   function billHasOverride(b){ return !!b.overrides && Object.prototype.hasOwnProperty.call(b.overrides, b.dueDate); }
+  function remainingBalance(bill){ return Math.max(0, Math.round((billAmountFor(bill) - (bill.paidSoFar || 0)) * 100) / 100); }
   function nextBillDueLabel(bill){
     const diff = daysBetween(todayISO(), bill.dueDate);
     if (diff < 0) return {cls:'overdue', text: 'Overdue'};
@@ -1030,7 +1035,33 @@
     bill.paid = false;
     bill.overrides = {};            // a "just this month" amount only lasts for its own cycle
   }
-  // undo the most recent payment of a recurring bill
+  // Records a payment toward a bill's current cycle and automatically logs it as a spend
+  // on the bill's assigned budget category (if one is set). Payments can be partial: once
+  // the cumulative amount for the cycle meets the amount due, the bill is finalized —
+  // a one-time bill is marked paid, a recurring bill rolls to its next due date.
+  function recordBillPayment(bill, amount, date){
+    amount = Math.round(amount * 100) / 100;
+    if (!(amount > 0)) return;
+    const due = billAmountFor(bill);
+    const cycleDue = bill.dueDate;           // the cycle this payment applies to, before any rollover
+    const after = Math.round(((bill.paidSoFar || 0) + amount) * 100) / 100;
+    const complete = after + 0.005 >= due;
+    if (bill.budgetCategoryId) {
+      const cat = state.budgetCategories.find(c => c.id === bill.budgetCategoryId && c.enabled);
+      if (cat) {
+        const spend = { id: uid(), categoryId: cat.id, amount, date, billId: bill.id, forDue: cycleDue,
+                         note: bill.name + (complete ? '' : ' (partial)') };
+        if (isSavingsCategory(cat) && cat.savingsLink) linkSpendToSavings(spend, cat.savingsLink);
+        state.budgetSpends.push(spend);
+      }
+    }
+    bill.paidSoFar = complete ? 0 : after;
+    if (complete) {
+      if (bill.repeat === 'none') bill.paid = true;
+      else markBillPaid(bill);
+    }
+  }
+  // undo the most recent payment of a recurring bill, including any spend it auto-logged
   function unpayBill(bill, recId){
     const rec = (bill.history || []).find(r => r.id === recId);
     if (!rec) return;
@@ -1039,8 +1070,12 @@
     bill.history = bill.history.filter(r => r.id !== recId);
     bill.dueDate = rec.due;
     bill.paid = false;
+    bill.paidSoFar = 0;
     bill.overrides = {};
     if (Math.round(rec.amount * 100) !== Math.round((bill.amount || 0) * 100)) bill.overrides[rec.due] = rec.amount;
+    const removedIds = state.budgetSpends.filter(sp => sp.billId === bill.id && sp.forDue === rec.due).map(sp => sp.id);
+    unlinkSpendsFromSavings(removedIds);
+    state.budgetSpends = state.budgetSpends.filter(sp => !(sp.billId === bill.id && sp.forDue === rec.due));
   }
   // older data: a recurring bill still flagged paid gets converted to the history + next-cycle model
   function normalizeBills(){
@@ -1286,11 +1321,13 @@
   function renderBillItem(b){
     const badge = nextBillDueLabel(b);
     const checked = !!b.paid;
-    const eff = billAmountFor(b);
+    const due = billAmountFor(b);
+    const remaining = remainingBalance(b);
     const repLabel = b.repeat === 'none' ? 'One-time' : b.repeat.charAt(0).toUpperCase()+b.repeat.slice(1);
     let extra = '';
-    if (eff <= 0) extra = ' · amount not set';
+    if (due <= 0) extra = ' · amount not set';
     else if (b.repeat !== 'none' && billHasOverride(b)) extra = b.repeat === 'weekly' ? ' · this week only' : ' · this month only';
+    if (!checked && b.paidSoFar > 0) extra += ` · ${fmt(b.paidSoFar)} of ${fmt(due)} paid`;
     return `
       <div class="bill-item">
         <div class="bill-row">
@@ -1300,19 +1337,20 @@
             <div class="meta">${repLabel}${extra}</div>
           </div>
           <div style="text-align:right;">
-            <div class="tx-amount">${fmt(eff)}</div>
+            <div class="tx-amount">${fmt(checked ? due : remaining)}</div>
             <div class="due-badge ${badge.cls}">${badge.text}</div>
           </div>
           <button class="tx-del" data-del-bill="${b.id}" aria-label="Delete">&times;</button>
         </div>
         <div class="bill-actions">
           <button class="link-btn" data-edit-bill="${b.id}">Edit</button>
-          <button class="link-btn" data-add-bill-budget="${b.id}">+ Add to Budget</button>
+          ${checked ? '' : `<button class="link-btn" data-pay-bill="${b.id}">Log payment</button>`}
         </div>
       </div>`;
   }
 
-  // a recorded payment of a recurring bill (shown under Paid)
+  // a recorded payment of a recurring bill (shown under Paid) — its budget spend was
+  // already logged automatically at the time it was paid, so there's nothing to add here
   function renderPaidRecord(b, rec){
     const latest = b.history.reduce((m, r) => r.due > m ? r.due : m, '');
     const undoable = rec.due === latest;
@@ -1330,9 +1368,6 @@
             <div class="tx-amount">${fmt(rec.amount)}</div>
             <div class="due-badge later">${dLabel(rec.due)}</div>
           </div>
-        </div>
-        <div class="bill-actions">
-          <button class="link-btn" data-add-bill-budget="${b.id}" data-paid-rec="${rec.id}">+ Add to Budget</button>
         </div>
       </div>`;
   }
@@ -1604,8 +1639,16 @@
       el.addEventListener('click', () => {
         const bill = state.bills.find(b => b.id === el.dataset.toggleBill);
         if (!bill) return;
-        if (bill.repeat === 'none') bill.paid = !bill.paid;
-        else markBillPaid(bill);
+        if (bill.repeat === 'none' && bill.paid) {
+          // undo a completed one-time bill, including the spend it auto-logged
+          const removedIds = state.budgetSpends.filter(sp => sp.billId === bill.id).map(sp => sp.id);
+          unlinkSpendsFromSavings(removedIds);
+          state.budgetSpends = state.budgetSpends.filter(sp => sp.billId !== bill.id);
+          bill.paid = false;
+          bill.paidSoFar = 0;
+        } else {
+          recordBillPayment(bill, remainingBalance(bill), todayISO());
+        }
         save(); render();
       });
     });
@@ -1620,8 +1663,8 @@
     document.querySelectorAll('[data-edit-bill]').forEach(btn => {
       btn.addEventListener('click', () => openBillSheet(btn.dataset.editBill));
     });
-    document.querySelectorAll('[data-add-bill-budget]').forEach(btn => {
-      btn.addEventListener('click', () => openBillBudgetSheet(btn.dataset.addBillBudget, btn.dataset.paidRec));
+    document.querySelectorAll('[data-pay-bill]').forEach(btn => {
+      btn.addEventListener('click', () => openBillPaySheet(btn.dataset.payBill));
     });
     document.querySelectorAll('[data-del-goal]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1737,7 +1780,7 @@
   const budgetScopeBackdrop = document.getElementById('budgetScopeBackdrop');
   const spendBackdrop = document.getElementById('spendBackdrop');
   const billBackdrop = document.getElementById('billBackdrop');
-  const billBudgetBackdrop = document.getElementById('billBudgetBackdrop');
+  const billPayBackdrop = document.getElementById('billPayBackdrop');
   const billScopeBackdrop = document.getElementById('billScopeBackdrop');
   const incomeBackdrop = document.getElementById('incomeBackdrop');
   const dailyBudgetBackdrop = document.getElementById('dailyBudgetBackdrop');
@@ -1757,7 +1800,7 @@
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billScopeBackdrop, billBudgetBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billScopeBackdrop, billPayBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -2362,6 +2405,12 @@
   }
   let editingBillId = null;
   let pendingBillEdit = null;
+  function populateBillCategorySelect(selectedId){
+    const enabledCats = state.budgetCategories.filter(c => c.enabled);
+    const sel = document.getElementById('billBudgetCategory');
+    sel.innerHTML = `<option value="">Don't link</option>` +
+      enabledCats.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('');
+  }
   function openBillSheet(billId){
     editingBillId = billId || null;
     const b = editingBillId ? state.bills.find(x => x.id === editingBillId) : null;
@@ -2370,6 +2419,7 @@
     document.getElementById('billName').value = b ? b.name : '';
     document.getElementById('billAmount').value = (b && billAmountFor(b) > 0) ? billAmountFor(b) : '';
     document.getElementById('billDue').value = b ? b.dueDate : todayISO();
+    populateBillCategorySelect(b ? b.budgetCategoryId : null);
     billRepeat = b ? b.repeat : 'monthly';
     syncBillRepeatSeg();
     openSheet(billBackdrop);
@@ -2380,14 +2430,16 @@
     const raw = parseFloat(document.getElementById('billAmount').value);
     const amount = isNaN(raw) ? 0 : Math.round(raw * 100) / 100;      // blank or 0 is fine: set it later
     const dueDate = document.getElementById('billDue').value;
+    const budgetCategoryId = document.getElementById('billBudgetCategory').value || null;
     if (!name || amount < 0 || !dueDate) return;
     if (!editingBillId) {
-      state.bills.push({ id: uid(), name, amount, dueDate, day: +dueDate.slice(8,10), repeat: billRepeat, paid: false, overrides: {} });
+      state.bills.push({ id: uid(), name, amount, dueDate, day: +dueDate.slice(8,10), repeat: billRepeat, paid: false, overrides: {}, paidSoFar: 0, budgetCategoryId });
       save(); closeSheet(billBackdrop); render();
       return;
     }
     const b = state.bills.find(x => x.id === editingBillId);
     if (!b) { closeSheet(billBackdrop); return; }
+    b.budgetCategoryId = budgetCategoryId;
     const p = { id: b.id, name, amount, dueDate, repeat: billRepeat };
     const amountChanged = Math.round(amount * 100) !== Math.round(billAmountFor(b) * 100);
     if (amountChanged && p.repeat !== 'none') {
@@ -2434,35 +2486,32 @@
   document.getElementById('billScopeAll').addEventListener('click', () => { const p = pendingBillEdit; pendingBillEdit = null; if (p) applyBillEdit(p, 'all'); });
   document.getElementById('billScopeCancel').addEventListener('click', () => { pendingBillEdit = null; closeSheet(billScopeBackdrop); });
 
-  // bill -> budget spend sheet
-  let billBudgetSourceId = null;
-  function openBillBudgetSheet(billId, paidRecId){
+  // Log a payment sheet — records a full or partial payment and automatically
+  // logs it as a spend against the bill's assigned budget category.
+  let billPaySourceId = null;
+  function openBillPaySheet(billId){
     const bill = state.bills.find(b => b.id === billId);
     if (!bill) return;
-    const rec = paidRecId ? (bill.history || []).find(r => r.id === paidRecId) : null;
-    const amt = rec ? rec.amount : billAmountFor(bill);
-    const enabledCats = state.budgetCategories.filter(c => c.enabled);
-    if (enabledCats.length === 0) { openCatSheet(null); return; }
-    billBudgetSourceId = billId;
-    document.getElementById('billBudgetLabel').textContent = bill.name + ' — ' + fmtText(amt);
-    const sel = document.getElementById('billBudgetCategory');
-    sel.innerHTML = enabledCats.map(c => `<option value="${c.id}">${c.icon} ${escapeHtml(c.name)}</option>`).join('');
-    document.getElementById('billBudgetAmount').value = amt > 0 ? amt : '';
-    document.getElementById('billBudgetDate').value = todayISO();
-    openSheet(billBudgetBackdrop);
+    billPaySourceId = billId;
+    const remaining = remainingBalance(bill);
+    document.getElementById('billPayLabel').textContent = bill.name + ' — ' + fmtText(remaining) + ' due';
+    document.getElementById('billPayAmount').value = remaining > 0 ? remaining : '';
+    document.getElementById('billPayHint').textContent = bill.budgetCategoryId
+      ? 'A smaller amount logs a partial payment; the bill stays open for the rest.'
+      : 'This bill isn\'t linked to a budget category yet, so the payment won\'t appear on the Monthly Budget tab. Set one by editing the bill.';
+    document.getElementById('billPayDate').value = defaultDateForView();
+    limitDateInputToView('billPayDate');
+    openSheet(billPayBackdrop);
   }
-  document.getElementById('billBudgetCancel').addEventListener('click', () => closeSheet(billBudgetBackdrop));
-  document.getElementById('billBudgetSave').addEventListener('click', () => {
-    const bill = state.bills.find(b => b.id === billBudgetSourceId);
-    const categoryId = document.getElementById('billBudgetCategory').value;
-    const amount = parseFloat(document.getElementById('billBudgetAmount').value);
-    const date = document.getElementById('billBudgetDate').value || todayISO();
-    if (!amount || amount <= 0 || !categoryId) return;
-    const billSpend = { id: uid(), categoryId, amount, note: bill ? bill.name : 'Bill', date, billId: billBudgetSourceId };
-    const billCat = state.budgetCategories.find(c => c.id === categoryId);
-    if (isSavingsCategory(billCat) && billCat.savingsLink) linkSpendToSavings(billSpend, billCat.savingsLink);
-    state.budgetSpends.push(billSpend);
-    save(); closeSheet(billBudgetBackdrop); render();
+  document.getElementById('billPayCancel').addEventListener('click', () => closeSheet(billPayBackdrop));
+  document.getElementById('billPaySave').addEventListener('click', () => {
+    const bill = state.bills.find(b => b.id === billPaySourceId);
+    if (!bill) { closeSheet(billPayBackdrop); return; }
+    const amount = parseFloat(document.getElementById('billPayAmount').value);
+    const date = clampDateToView(document.getElementById('billPayDate').value);
+    if (!(amount > 0)) return;
+    recordBillPayment(bill, amount, date);
+    save(); closeSheet(billPayBackdrop); render();
   });
 
   // goal sheet
