@@ -1300,7 +1300,8 @@
         <svg width="100" height="100" viewBox="0 0 100 100">${circles}</svg>
         <div class="donut-legend">`;
       spendByCat.forEach((x,i) => {
-        html += `<div class="item"><span class="swatch" style="background:${PALETTE[i%PALETTE.length]}"></span>${escapeHtml(x.c.name)}<b>${fmt(x.spent)}</b></div>`;
+        const pctOfTotal = totalSpendForDonut > 0 ? (x.spent/totalSpendForDonut)*100 : 0;
+        html += `<div class="item"><span class="swatch" style="background:${PALETTE[i%PALETTE.length]}"></span>${escapeHtml(x.c.name)}<b>${pctOfTotal.toFixed(pctOfTotal < 10 ? 1 : 0)}%</b></div>`;
       });
       html += `</div></div></div>`;
     }
