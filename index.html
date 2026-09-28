@@ -1260,6 +1260,7 @@
     const income = getIncomeForMonth(mk);
     const spent = totalBudgetSpendForMonth();
     const budgeted = totalBudgeted();
+    const excess = income - budgeted;
     const net = income - spent;
     const heroLabel = isViewingCurrentMonth() ? 'left over this month' : 'left over that month';
     let html = `
@@ -1269,6 +1270,7 @@
         <div class="breakdown">
           <div>Income<span>${fmt(income)}</span></div>
           <div>Budgeted<span>${fmt(budgeted)}</span></div>
+          <div>Excess Budget<span class="${excess<0?'neg':''}">${fmt(excess)}</span></div>
           <div>Spent<span>${fmt(spent)}</span></div>
         </div>
       </div>
