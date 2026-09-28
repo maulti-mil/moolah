@@ -2582,7 +2582,7 @@
     const bill = state.bills.find(b => b.id === billPaySourceId);
     if (!bill) { closeSheet(billPayBackdrop); return; }
     const amount = parseFloat(document.getElementById('billPayAmount').value);
-    const date = clampDateToView(document.getElementById('billPayDate').value);
+    const date = document.getElementById('billPayDate').value;
     if (!(amount > 0)) return;
     recordBillPayment(bill, amount, date);
     save(); closeSheet(billPayBackdrop); render();
