@@ -1032,7 +1032,9 @@
   function monthHasDailyBudget(mk){
     return state.dailyCategories.some(c => c.enabled && dailyBudgetFor(c, mk) > 0);
   }
-  // Jan..current month of the real current year; the current month is 'pending' until it closes
+  // the excess tracker starts counting here; earlier months (e.g. September 2026) are left out
+  const EXCESS_START_MONTH = '2026-10';
+  // EXCESS_START_MONTH..current month of the real current year; the current month is 'pending' until it closes
   function excessBreakdown(){
     const nowKey = realMonthKey();
     const year = nowKey.slice(0,4);
@@ -1040,6 +1042,7 @@
     const rows = [];
     for (let m = 1; m <= curM; m++){
       const mk = year + '-' + String(m).padStart(2,'0');
+      if (mk < EXCESS_START_MONTH) continue;
       if (!monthHasDailyBudget(mk)) continue;
       rows.push({ mk, label: MONTH_NAMES[m-1] + ' ' + year, amount: dailyExcessForMonth(mk), pending: mk === nowKey });
     }
