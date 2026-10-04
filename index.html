@@ -153,7 +153,9 @@
   .cat-tile.b-good { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
   .cat-tile.b-warn { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange); }
   .cat-tile.b-low { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
-  .cat-tile .tile-left { font-size: 11px; font-weight: 600; margin-top: -4px; }
+  .cat-tile .tile-nums { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: -4px; }
+  .cat-tile .tile-spent { font-size: 11px; font-weight: 500; color: var(--text-dim); }
+  .cat-tile .tile-left { font-size: 11px; font-weight: 600; }
   .cat-tile.b-good .tile-left { color: var(--good); }
   .cat-tile.b-warn .tile-left { color: var(--orange); }
   .cat-tile.b-low .tile-left { color: var(--bad); }
@@ -1211,15 +1213,16 @@
       const mkTile = viewMonthKey();
       activeDailyCats.forEach(c => {
         const b = dailyBudgetFor(c, mkTile);
+        const spent = dailySpentInMonth(c.id, mkTile);
         let cls = '', note = '';
         if (b > 0) {
-          const spent = dailySpentInMonth(c.id, mkTile);
           const leftCents = Math.round((b - spent) * 100);
           const budgetCents = Math.round(b * 100);
           cls = leftCents < budgetCents * 0.2 ? ' b-low' : (leftCents < budgetCents * 0.5 ? ' b-warn' : ' b-good');
           note = `<span class="tile-left">${leftCents < 0 ? fmt(-leftCents/100) + ' over' : fmt(leftCents/100) + ' left'}</span>`;
         }
-        html += `<button type="button" class="cat-tile${cls}" data-log-cat="${c.id}"><span class="tile-icon">${c.icon}</span>${escapeHtml(c.name)}${note}</button>`;
+        const spentLine = `<span class="tile-spent">${fmt(spent)} spent</span>`;
+        html += `<button type="button" class="cat-tile${cls}" data-log-cat="${c.id}"><span class="tile-icon">${c.icon}</span>${escapeHtml(c.name)}<span class="tile-nums">${spentLine}${note}</span></button>`;
       });
       html += `</div>`;
     }
