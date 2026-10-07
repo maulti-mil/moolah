@@ -117,13 +117,11 @@
   .cal-dow { font-size: 10.5px; color: var(--text-dim); text-align: center; padding-bottom: 4px; }
   .cal-cell {
     aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-size: 12.5px; background: var(--surface-2); color: var(--text-dim); cursor: pointer;
+    font-size: 12.5px; background: var(--surface-2); color: var(--text-dim);
     position: relative; border: 1.5px solid transparent;
   }
   .cal-cell.today { font-weight: 700; }
-  .cal-cell.selected { border-color: var(--accent); }
-  .cal-cell.blank { background: transparent; cursor: default; }
-  .cal-cell.has-spend { color: var(--surface); }
+  .cal-cell.blank { background: transparent; }
   .cal-cell.bill-overdue { background: var(--bad); color: var(--surface); }
   .cal-cell.bill-soon { background: var(--accent); color: var(--surface); }
   .cal-cell.bill-later { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
@@ -221,7 +219,9 @@
   .tx-main .note { font-size: 14px; font-weight: 500; }
   .tx-main .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
   .tx-amount { font-family: 'Spectral', serif; font-size: 15px; font-weight: 600; white-space: nowrap; }
-  .tx-del { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; padding: 4px 2px; line-height: 1; }
+  .tx-del, .tx-edit { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; padding: 4px 2px; line-height: 1; }
+  .tx-edit svg { width: 15px; height: 15px; display: block; }
+  .tx-main[data-edit-tx] { cursor: pointer; }
 
   .cat-row .row-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 8px; cursor: pointer; }
   .cat-row .name { font-size: 15px; font-weight: 500; }
@@ -330,8 +330,6 @@
     font-size: 14px; cursor: pointer; margin-top: 8px;
   }
   .btn-danger-link { display:block; text-align:center; color: var(--bad); font-family: inherit; font-size: 13px; background:none; border:none; cursor:pointer; margin-top: 14px; }
-  .row-inline { display: flex; gap: 10px; }
-  .row-inline > * { flex: 1; }
 
   ::-webkit-scrollbar { display: none; }
 </style>
@@ -352,7 +350,7 @@
         </button>
       </div>
     </div>
-    <button class="icon-btn" id="settingsBtn" aria-label="Edit income">
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
     </button>
   </header>
@@ -373,8 +371,11 @@
 <div class="sheet-backdrop" id="txBackdrop">
   <div class="sheet">
     <div class="handle"></div>
-    <h2>Log an expense</h2>
+    <h2 id="txSheetTitle">Log an expense</h2>
     <div class="sub-label" id="txCatLabel"></div>
+    <label class="field" id="txCatField" style="display:none;"><span>Category</span>
+      <select id="txCategory"></select>
+    </label>
     <label class="field"><span>Amount</span>
       <input type="number" id="txAmount" inputmode="decimal" placeholder="0.00" step="0.01">
     </label>
@@ -1246,12 +1247,13 @@
         html += `
           <div class="tx-row">
             ${cat ? `<span class="cat-icon">${cat.icon}</span>` : ''}
-            <div class="tx-main">
+            <div class="tx-main" data-edit-tx="${t.id}">
               <div class="note">${escapeHtml(t.note || (cat?cat.name:'Expense'))}</div>
               ${dailyTxMeta(t, cat)}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <div class="tx-amount">${fmt(t.amount)}</div>
+              <button class="tx-edit" data-edit-tx="${t.id}" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
               <button class="tx-del" data-del-tx="${t.id}" aria-label="Delete">&times;</button>
             </div>
           </div>`;
@@ -1610,11 +1612,7 @@
     document.getElementById('brandName').textContent = state.ledgerName;
     document.title = state.ledgerName;
     const vd = viewMonthDate();
-    let label = MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear();
-    document.getElementById('monthLabel').textContent = label;
-    const gear = document.getElementById('settingsBtn');
-    gear.style.display = '';
-    gear.setAttribute('aria-label', 'Settings');
+    document.getElementById('monthLabel').textContent = MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear();
     const main = document.getElementById('main');
     if (activeTab === 'daily') main.innerHTML = renderDaily();
     else if (activeTab === 'budget') main.innerHTML = renderBudget();
@@ -1673,6 +1671,9 @@
   function attachDynamicListeners(){
     document.querySelectorAll('[data-log-cat]').forEach(btn => {
       btn.addEventListener('click', () => openTxSheet(btn.dataset.logCat));
+    });
+    document.querySelectorAll('[data-edit-tx]').forEach(el => {
+      el.addEventListener('click', () => openTxEditSheet(el.dataset.editTx));
     });
     document.querySelectorAll('[data-del-tx]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -2175,7 +2176,34 @@
 
   // quick log-expense sheet (category chosen by tapping a tile)
   let txCategoryId = null;
+  let editingTxId = null;
+  function setTxSheetMode(editing){
+    document.getElementById('txSheetTitle').textContent = editing ? 'Edit expense' : 'Log an expense';
+    document.getElementById('txSave').textContent = editing ? 'Save changes' : 'Save expense';
+    document.getElementById('txCatField').style.display = editing ? '' : 'none';
+    document.getElementById('txCatLabel').style.display = editing ? 'none' : '';
+  }
+  // edit an existing expense: category, amount, note and date (the date can move it to any month)
+  function openTxEditSheet(id){
+    const t = state.expenses.find(x => x.id === id);
+    if (!t) return;
+    editingTxId = id;
+    const cats = state.dailyCategories.filter(c => c.enabled || c.id === t.categoryId);
+    const known = cats.some(c => c.id === t.categoryId);
+    document.getElementById('txCategory').innerHTML =
+      (known ? '' : `<option value="${escapeHtml(t.categoryId || '')}" selected>Uncategorized</option>`) +
+      cats.map(c => `<option value="${c.id}" ${c.id === t.categoryId ? 'selected' : ''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('');
+    document.getElementById('txAmount').value = t.amount;
+    document.getElementById('txNote').value = t.note || '';
+    const dateEl = document.getElementById('txDate');
+    dateEl.value = t.date;
+    dateEl.removeAttribute('min'); dateEl.removeAttribute('max');
+    setTxSheetMode(true);
+    openSheet(txBackdrop);
+  }
   function openTxSheet(categoryId){
+    editingTxId = null;
+    setTxSheetMode(false);
     txCategoryId = categoryId;
     const cat = state.dailyCategories.find(c=>c.id===categoryId);
     document.getElementById('txCatLabel').textContent = cat ? 'For: ' + cat.name : '';
@@ -2201,8 +2229,22 @@
   document.getElementById('funMsgOk').addEventListener('click', () => closeSheet(funMsgBackdrop));
   document.getElementById('txSave').addEventListener('click', () => {
     const amount = parseFloat(document.getElementById('txAmount').value);
-    if (!amount || amount <= 0 || !txCategoryId) return;
+    if (!amount || amount <= 0) return;
     const note = document.getElementById('txNote').value.trim();
+    if (editingTxId) {
+      const t = state.expenses.find(x => x.id === editingTxId);
+      editingTxId = null;
+      if (t) {
+        t.amount = amount;
+        t.note = note;
+        t.categoryId = document.getElementById('txCategory').value || t.categoryId;
+        t.date = document.getElementById('txDate').value || t.date;
+        save(); render();
+      }
+      closeSheet(txBackdrop);
+      return;
+    }
+    if (!txCategoryId) return;
     const date = clampDateToView(document.getElementById('txDate').value);
     state.expenses.push({ id: uid(), amount, note, categoryId: txCategoryId, date });
     save(); closeSheet(txBackdrop); render();
