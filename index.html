@@ -237,6 +237,10 @@
   .donut-legend .item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-dim); }
   .donut-legend .swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .donut-legend .item b { color: var(--text); font-weight: 600; margin-left: auto; font-family: 'Spectral', serif; }
+  .chart-toggle { display: flex; gap: 4px; padding: 3px; background: var(--surface-2); border-radius: 10px; margin-bottom: 14px; }
+  .chart-toggle button { flex: 1; border: none; background: none; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text-dim); padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+  .chart-toggle button.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .chart-empty { font-size: 12.5px; color: var(--text-dim); padding: 4px 0 2px; }
 
   .bill-item + .bill-item { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
   .bill-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -1189,6 +1193,7 @@
   // ---------- state for UI ----------
   let activeTab = 'daily';
   let expandedCatId = null;
+  let budgetChartMode = null; // 'budgeted' | 'spent'; null = auto (spent if anything is spent, else budgeted)
   let expandedTrackerId = null;
   let expandedExcess = false;
 
@@ -1292,28 +1297,42 @@
       return html;
     }
 
-    // donut of this month's manual spend items by category
-    const spendByCat = activeBudgetCats.map(c => ({ c, spent: monthBudgetSpends().filter(e=>e.categoryId===c.id).reduce((s,e)=>s+e.amount,0) }))
-      .filter(x => x.spent > 0);
-    if (spendByCat.length > 0) {
-      const totalSpendForDonut = spendByCat.reduce((s,x)=>s+x.spent,0);
-      let offset = 0;
-      const R = 40, C = 2*Math.PI*R;
-      let circles = '';
-      spendByCat.forEach((x,i) => {
-        const frac = x.spent/totalSpendForDonut;
-        const len = frac*C;
-        circles += `<circle r="${R}" cx="50" cy="50" fill="none" stroke="${PALETTE[i%PALETTE.length]}" stroke-width="14" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)"/>`;
-        offset += len;
-      });
-      html += `<div class="card"><div class="donut-wrap">
-        <svg width="100" height="100" viewBox="0 0 100 100">${circles}</svg>
-        <div class="donut-legend">`;
-      spendByCat.forEach((x,i) => {
-        const pctOfTotal = totalSpendForDonut > 0 ? (x.spent/totalSpendForDonut)*100 : 0;
-        html += `<div class="item"><span class="swatch" style="background:${PALETTE[i%PALETTE.length]}"></span>${escapeHtml(x.c.name)}<b>${pctOfTotal.toFixed(pctOfTotal < 10 ? 1 : 0)}%</b></div>`;
-      });
-      html += `</div></div></div>`;
+    // donut: category allocation, toggle between Budgeted and Spent
+    const spendByCat = activeBudgetCats.map(c => ({ c, val: monthBudgetSpends().filter(e=>e.categoryId===c.id).reduce((s,e)=>s+e.amount,0) }));
+    const budgetByCat = activeBudgetCats.map(c => { const eff = getCategoryBudget(c, mk); return { c, val: c.period === 'weekly' ? eff*4.345 : eff }; });
+    const hasSpend = spendByCat.some(x => x.val > 0);
+    const hasBudget = budgetByCat.some(x => x.val > 0);
+    if (hasSpend || hasBudget) {
+      const mode = budgetChartMode || (hasSpend ? 'spent' : 'budgeted');
+      const slices = (mode === 'budgeted' ? budgetByCat : spendByCat).filter(x => x.val > 0);
+      const totalForDonut = slices.reduce((s,x)=>s+x.val,0);
+      html += `<div class="card">
+        <div class="chart-toggle">
+          <button data-chart-mode="budgeted" class="${mode==='budgeted'?'active':''}">Budgeted</button>
+          <button data-chart-mode="spent" class="${mode==='spent'?'active':''}">Spent</button>
+        </div>`;
+      if (slices.length === 0) {
+        html += `<div class="chart-empty">${mode==='spent' ? 'Nothing spent yet this month.' : 'No budget amounts set yet.'}</div></div>`;
+      } else {
+        let offset = 0;
+        const R = 40, C = 2*Math.PI*R;
+        let circles = '';
+        slices.forEach(x => {
+          const col = PALETTE[activeBudgetCats.indexOf(x.c) % PALETTE.length]; // stable colour per category across both views
+          const len = (x.val/totalForDonut)*C;
+          circles += `<circle r="${R}" cx="50" cy="50" fill="none" stroke="${col}" stroke-width="14" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)"/>`;
+          offset += len;
+        });
+        html += `<div class="donut-wrap">
+          <svg width="100" height="100" viewBox="0 0 100 100">${circles}</svg>
+          <div class="donut-legend">`;
+        slices.forEach(x => {
+          const col = PALETTE[activeBudgetCats.indexOf(x.c) % PALETTE.length];
+          const pctOfTotal = (x.val/totalForDonut)*100;
+          html += `<div class="item"><span class="swatch" style="background:${col}"></span>${escapeHtml(x.c.name)}<b>${pctOfTotal.toFixed(pctOfTotal < 10 ? 1 : 0)}%</b></div>`;
+        });
+        html += `</div></div></div>`;
+      }
     }
 
     activeBudgetCats.forEach(c => {
@@ -1790,6 +1809,9 @@
         state.budgetSpends = state.budgetSpends.filter(sp => sp.id !== btn.dataset.delSpend);
         save(); render();
       });
+    });
+    document.querySelectorAll('[data-chart-mode]').forEach(btn => {
+      btn.addEventListener('click', () => { budgetChartMode = btn.dataset.chartMode; render(); });
     });
     document.querySelectorAll('[data-toggle-excess]').forEach(btn => {
       btn.addEventListener('click', () => { expandedExcess = !expandedExcess; render(); });
