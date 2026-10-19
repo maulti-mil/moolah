@@ -140,6 +140,7 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
     padding: 14px 6px 12px; text-align: center; font-family: inherit; font-size: 12px; font-weight: 500;
     color: var(--text); cursor: pointer; line-height: 1.25; min-height: 78px;
+    -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px;
     transition: transform .1s ease, background .12s ease, border-color .12s ease;
   }
@@ -212,6 +213,8 @@
   .excess-pending { font-size: 12.5px; color: var(--text-dim); margin: -2px 0 8px; line-height: 1.4; }
   .excess-pending b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; }
   .day-detail-label { font-size: 13px; font-weight: 500; margin: 16px 0 8px; }
+  .entries-total { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 12px; font-size: 13px; color: var(--text-dim); }
+  .entries-total b { font-family: 'Spectral', serif; font-size: 22px; font-weight: 600; color: var(--text); }
 
   .tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .tx-row + .tx-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -230,7 +233,6 @@
   .cat-row .figures b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; font-size: 14px; }
   .cat-actions { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
   .cat-entries { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .cat-entries .empty-mini { font-size: 12.5px; color: var(--text-dim); }
 
   .donut-wrap { display: flex; align-items: center; gap: 18px; }
   .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 7px; }
@@ -391,6 +393,18 @@
     </label>
     <button class="btn-primary" id="txSave">Save expense</button>
     <button class="btn-secondary" id="txCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Category entries (long-press a Daily Expense tile) -->
+<div class="sheet-backdrop" id="catEntriesBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="catEntriesTitle"></h2>
+    <div class="sub-label" id="catEntriesSub"></div>
+    <div class="entries-total"><span>Total</span><b id="catEntriesTotal"></b></div>
+    <div class="card" id="catEntriesList"></div>
+    <button class="btn-secondary" id="catEntriesDone">Close</button>
   </div>
 </div>
 
@@ -806,8 +820,8 @@
     {name:'Insurance', icon:'🛡️'}, {name:'Gift', icon:'🎁'}
   ];
 
-  function todayISO(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-  function realMonthKey(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  function todayISO(){ return isoLocal(new Date()); }
+  function realMonthKey(){ return todayISO().slice(0,7); }
   function monthKeyOf(dateStr){ return dateStr.slice(0,7); }
   const CURRENCIES = {
     USD: { symbol: '$',    name: 'US / Canadian dollar', short: 'USD / CAD' },
@@ -940,10 +954,7 @@
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth() + viewOffset, 1);
   }
-  function viewMonthKey(){
-    const d = viewMonthDate();
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-  }
+  function viewMonthKey(){ return isoLocal(viewMonthDate()).slice(0,7); }
   function isViewingCurrentMonth(){ return viewOffset === 0; }
   // entries logged from the Daily / Budget tabs belong to the month being viewed
   function viewMonthBounds(){
@@ -1021,10 +1032,13 @@
     hist.sort((a,b) => a.from.localeCompare(b.from));
     cat.budgetHistory = hist;
   }
-  function dailySpentInMonth(catId, mk){
+  function dailyExpensesFor(catId, mk){
     return state.expenses
       .filter(t => t.categoryId === catId && monthKeyOf(t.date) === mk)
-      .reduce((s,t) => s + t.amount, 0);
+      .sort((a,b) => b.date.localeCompare(a.date) || (a.note||'').localeCompare(b.note||''));
+  }
+  function dailySpentInMonth(catId, mk){
+    return dailyExpensesFor(catId, mk).reduce((s,t) => s + t.amount, 0);
   }
   // unused portion for a month: per enabled category with a budget, never negative
   function dailyExcessForMonth(mk){
@@ -1689,7 +1703,21 @@
 
   function attachDynamicListeners(){
     document.querySelectorAll('[data-log-cat]').forEach(btn => {
-      btn.addEventListener('click', () => openTxSheet(btn.dataset.logCat));
+      // tap = log an expense; long-press = view the category's entries
+      let timer = null, longPressed = false, x0 = 0, y0 = 0;
+      const cancel = () => clearTimeout(timer);
+      btn.addEventListener('pointerdown', e => {
+        longPressed = false; x0 = e.clientX; y0 = e.clientY;
+        timer = setTimeout(() => {
+          longPressed = true;
+          if (navigator.vibrate) navigator.vibrate(15);
+          openCatEntriesSheet(btn.dataset.logCat);
+        }, 500);
+      });
+      btn.addEventListener('pointermove', e => { if (Math.hypot(e.clientX - x0, e.clientY - y0) > 10) cancel(); });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, cancel));
+      btn.addEventListener('contextmenu', e => e.preventDefault());
+      btn.addEventListener('click', () => { if (!longPressed) openTxSheet(btn.dataset.logCat); });
     });
     document.querySelectorAll('[data-edit-tx]').forEach(el => {
       el.addEventListener('click', () => openTxEditSheet(el.dataset.editTx));
@@ -1877,10 +1905,11 @@
   const contribBackdrop = document.getElementById('contribBackdrop');
   const trackerBackdrop = document.getElementById('trackerBackdrop');
   const trackerEntryBackdrop = document.getElementById('trackerEntryBackdrop');
+  const catEntriesBackdrop = document.getElementById('catEntriesBackdrop');
 
   function openSheet(el){ el.classList.add('show'); }
   function closeSheet(el){ el.classList.remove('show'); }
-  [txBackdrop, dailyCatBackdrop, budgetCatManageBackdrop, catBackdrop, budgetScopeBackdrop, spendBackdrop, catSavingsBackdrop, billBackdrop, billScopeBackdrop, billPayBackdrop, incomeBackdrop, dailyBudgetBackdrop, monthlyBudgetBackdrop, settingsBackdrop, currencyBackdrop, themesBackdrop, clearBackdrop, editSavedBackdrop, confirmBackdrop, funMsgBackdrop, renameBackdrop, goalBackdrop, contribBackdrop, trackerBackdrop, trackerEntryBackdrop].forEach(bd => {
+  document.querySelectorAll('.sheet-backdrop').forEach(bd => {
     bd.addEventListener('click', (e) => { if (e.target === bd) closeSheet(bd); });
   });
 
@@ -1894,7 +1923,6 @@
     openSheet(incomeBackdrop);
   }
   // ---------- settings menu (gear) ----------
-  const STORE_KEY_LABEL = 'ledger-app-data-v4';
   function setSettingsMsg(t){ document.getElementById('settingsMsg').textContent = t || ''; }
   function openSettingsSheet(){
     setSettingsMsg('');
@@ -1981,7 +2009,7 @@
   // export: share sheet on touch devices (reliable in home-screen apps), file download elsewhere
   document.getElementById('setExportRow').addEventListener('click', async () => {
     const fname = 'ledger-backup-' + todayISO() + '.json';
-    const payload = JSON.stringify({ ledger: STORE_KEY_LABEL, exportedAt: new Date().toISOString(), data: state }, null, 2);
+    const payload = JSON.stringify({ ledger: STORE_KEY, exportedAt: new Date().toISOString(), data: state }, null, 2);
     try {
       const file = new File([payload], fname, { type: 'application/json' });
       if (window.matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -2197,6 +2225,30 @@
   });
 
   // quick log-expense sheet (category chosen by tapping a tile)
+  // list every expense logged to one daily category for the viewed month, with its total
+  function openCatEntriesSheet(catId){
+    const cat = state.dailyCategories.find(c => c.id === catId);
+    if (!cat) return;
+    const mk = viewMonthKey(), vd = viewMonthDate();
+    const txs = dailyExpensesFor(catId, mk);
+    document.getElementById('catEntriesTitle').textContent = cat.icon + ' ' + cat.name;
+    document.getElementById('catEntriesSub').textContent =
+      MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear() + ' · ' + txs.length + (txs.length === 1 ? ' entry' : ' entries');
+    document.getElementById('catEntriesTotal').innerHTML = fmt(dailySpentInMonth(catId, mk));
+    document.getElementById('catEntriesList').innerHTML = txs.length
+      ? txs.map(t => `
+          <div class="tx-row">
+            <div class="tx-main">
+              <div class="note">${escapeHtml(t.note || cat.name)}</div>
+              ${dailyTxMeta(t)}
+            </div>
+            <div class="tx-amount">${fmt(t.amount)}</div>
+          </div>`).join('')
+      : `<div class="empty-mini" style="padding-bottom:0;">Nothing logged in this category for this month.</div>`;
+    openSheet(catEntriesBackdrop);
+  }
+  document.getElementById('catEntriesDone').addEventListener('click', () => closeSheet(catEntriesBackdrop));
+
   let txCategoryId = null;
   let editingTxId = null;
   function setTxSheetMode(editing){
