@@ -213,6 +213,8 @@
   .excess-pending { font-size: 12.5px; color: var(--text-dim); margin: -2px 0 8px; line-height: 1.4; }
   .excess-pending b { font-family: 'Spectral', serif; color: var(--text); font-weight: 600; }
   .day-detail-label { font-size: 13px; font-weight: 500; margin: 16px 0 8px; }
+  .hint-note { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--accent-soft); font-size: 12px; color: var(--text-dim); }
+  .hint-note .link-btn { font-size: 12px; flex-shrink: 0; }
   .entries-total { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 12px; font-size: 13px; color: var(--text-dim); }
   .entries-total b { font-family: 'Spectral', serif; font-size: 22px; font-weight: 600; color: var(--text); }
 
@@ -1032,6 +1034,14 @@
     hist.sort((a,b) => a.from.localeCompare(b.from));
     cat.budgetHistory = hist;
   }
+  // the long-press tip goes away for good once it is dismissed or the gesture has been used
+  function dismissLongPressHint(){
+    if (state.longPressHintSeen) return;
+    state.longPressHintSeen = true;
+    save();
+    const el = document.getElementById('longPressHint');
+    if (el) el.remove();
+  }
   function dailyExpensesFor(catId, mk){
     return state.expenses
       .filter(t => t.categoryId === catId && monthKeyOf(t.date) === mk)
@@ -1232,6 +1242,9 @@
     if (activeDailyCats.length === 0) {
       html += `<div class="empty"><b>No categories turned on.</b><br>Tap "Manage" to turn on categories like Groceries or Coffee, then tap one to log a spend against it.</div>`;
     } else {
+      if (!state.longPressHintSeen) {
+        html += `<div class="hint-note" id="longPressHint"><span>Tap a tile to log an expense. Hold it to see its entries.</span><button class="link-btn" id="dismissHint">Got it</button></div>`;
+      }
       html += `<div class="tile-grid">`;
       const mkTile = viewMonthKey();
       activeDailyCats.forEach(c => {
@@ -1702,6 +1715,8 @@
   }
 
   function attachDynamicListeners(){
+    const hintBtn = document.getElementById('dismissHint');
+    if (hintBtn) hintBtn.addEventListener('click', dismissLongPressHint);
     document.querySelectorAll('[data-log-cat]').forEach(btn => {
       // tap = log an expense; long-press = view the category's entries
       let timer = null, longPressed = false, x0 = 0, y0 = 0;
@@ -1710,6 +1725,7 @@
         longPressed = false; x0 = e.clientX; y0 = e.clientY;
         timer = setTimeout(() => {
           longPressed = true;
+          dismissLongPressHint();
           if (navigator.vibrate) navigator.vibrate(15);
           openCatEntriesSheet(btn.dataset.logCat);
         }, 500);
