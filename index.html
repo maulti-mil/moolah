@@ -402,6 +402,46 @@
   :root[data-theme="island"] .sheet-backdrop.center-modal .sheet { border-radius: 28px; }
   :root[data-theme="island"] .sheet h2 { font-weight: 500; font-size: 19px; letter-spacing: 0; }
   :root[data-theme="island"] input, :root[data-theme="island"] select { border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+
+  /* ===== Travel mode ===== */
+  .t-badge { display: none; font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+  html.travel-on .t-badge { display: block; }
+  html.travel-on .month-nav, html.travel-on nav.tabs { display: none; }
+  html.travel-on #setCurrencyRow + #setThemeRow { border-top: none; }
+  .t-head { display: flex; align-items: center; gap: 14px; padding: 8px 0 2px; }
+  .t-head .link-btn { margin-left: auto; align-self: flex-start; padding-top: 6px; }
+  .t-emoji { font-size: 44px; line-height: 1; }
+  .t-dest { font-family: 'Spectral', Georgia, serif; font-size: 26px; font-weight: 600; line-height: 1.1; }
+  .t-dates { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+  .t-note { font-size: 13.5px; color: var(--text-dim); line-height: 1.5; margin: 8px 0 16px; }
+  .t-setup { text-align: center; padding: 28px 20px; margin-top: 12px; }
+  .t-setup .t-emoji { margin-bottom: 8px; }
+  .t-daylabel { font-size: 13px; color: var(--text-dim); margin: 4px 0 8px; }
+  .t-strip { position: relative; display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
+  .t-day { flex: 0 0 46px; height: 98px; border-radius: 18px; border: 1.5px solid transparent; background: var(--surface-2);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; padding: 8px 0 7px;
+    font-family: inherit; font-size: 12.5px; color: var(--text-dim); cursor: pointer; }
+  .t-day .bar-col { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .t-day .bar { display: block; width: 16px; border-radius: 8px; background: rgba(120,118,122,0.55); }
+  .t-day .dn { font-weight: 500; }
+  .t-day small { font-size: 9.5px; line-height: 10px; height: 10px; }
+  .t-day.today .dn { font-weight: 700; color: var(--text); }
+  .t-day.future { background: transparent; border: 1.5px dashed rgba(124,122,125,0.4); }
+  .t-day.future .bar { opacity: 0.45; }
+  .t-day.sel { background: var(--accent); color: var(--on-accent, #fff); }
+  .t-day.sel .dn { color: var(--on-accent, #fff); }
+  .t-day.sel .bar { background: var(--on-accent, #fff); }
+  .t-cats { display: flex; align-items: flex-end; gap: 10px; height: 200px; overflow-x: auto; margin: 12px 0 6px; scrollbar-width: none; }
+  .t-cat { flex: 1 0 74px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.6);
+    background: var(--tile-grad, var(--surface)); color: var(--text); font-family: inherit;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; padding: 12px 4px; cursor: pointer; }
+  .t-cat .e { font-size: 26px; line-height: 1.15; }
+  .t-cat .a { font-size: 13px; font-weight: 600; }
+  .t-cat .n { font-size: 11.5px; color: var(--text-dim); }
+  .t-cat.add { flex: 0 0 56px; height: 84px; justify-content: center; background: transparent; border: 1.5px dashed rgba(124,122,125,0.45); font-size: 24px; color: var(--text-dim); }
+  .t-listhead { display: flex; align-items: center; gap: 12px; margin: 16px 0 10px; }
+  .t-sel { font-size: 15px; font-weight: 600; background: var(--surface-2); padding: 6px 14px; border-radius: 999px; }
+  .t-seltotal { margin-left: auto; font-size: 15px; color: var(--text-dim); }
   ::-webkit-scrollbar { display: none; }
 </style>
 </head>
@@ -420,6 +460,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </div>
+      <div class="t-badge">✈️ Travel mode</div>
     </div>
     <button class="icon-btn" id="settingsBtn" aria-label="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
@@ -624,6 +665,10 @@
   <div class="sheet">
     <div class="handle"></div>
     <h2>Settings</h2>
+    <div class="settings-group">
+      <button type="button" class="settings-row" id="setTravelRow"><span>Travel mode<small id="setTravelSub">Track spending on a trip</small></span><span class="toggle-switch" id="travelToggle" style="display:block;"></span></button>
+      <button type="button" class="settings-row" id="setTripRow" style="display:none;"><span>Trip details<small id="setTripSub"></small></span><i>›</i></button>
+    </div>
     <div class="settings-group">
       <button type="button" class="settings-row" id="setBudgetRow"><span>Daily Expense Budget<small>Monthly limit for each daily category</small></span><i>›</i></button>
       <button type="button" class="settings-row" id="setMonthlyRow"><span>Monthly Expense Budget<small>Budget amounts for your Monthly Budget categories</small></span><i>›</i></button>
@@ -855,6 +900,71 @@
   </div>
 </div>
 
+<!-- Travel mode: trip details -->
+<div class="sheet-backdrop" id="tripBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Trip details</h2>
+    <div style="display:flex; gap:10px;">
+      <label class="field" style="width:76px; flex:none;"><span>Icon</span>
+        <input type="text" id="tripEmoji" maxlength="4" style="text-align:center; font-size:22px;">
+      </label>
+      <label class="field" style="flex:1;"><span>Where to?</span>
+        <input type="text" id="tripDest" placeholder="e.g. Siargao">
+      </label>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <label class="field" style="flex:1; min-width:0;"><span>From</span><input type="date" id="tripStart"></label>
+      <label class="field" style="flex:1; min-width:0;"><span>To</span><input type="date" id="tripEnd"></label>
+    </div>
+    <label class="field"><span>Trip currency</span>
+      <select id="tripCurrency"></select>
+    </label>
+    <div class="settings-msg" id="tripMsg"></div>
+    <button class="btn-primary" id="tripSave">Save trip</button>
+    <button class="btn-secondary" id="tripCancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Travel mode: log / edit an expense -->
+<div class="sheet-backdrop" id="tExpBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 id="tExpTitle">Log an expense</h2>
+    <div class="sub-label" id="tExpSub"></div>
+    <label class="field"><span>Category</span><select id="tExpCat"></select></label>
+    <label class="field"><span>Amount</span>
+      <input type="number" id="tExpAmount" inputmode="decimal" placeholder="0.00" step="0.01">
+    </label>
+    <label class="field"><span>Note (optional)</span>
+      <input type="text" id="tExpNote" placeholder="e.g. Viet coffee">
+    </label>
+    <label class="field"><span>Date</span><input type="date" id="tExpDate"></label>
+    <button class="btn-primary" id="tExpSave">Save expense</button>
+    <button class="btn-secondary" id="tExpCancel">Cancel</button>
+    <button class="btn-danger-link" id="tExpDelete" style="display:none;">Delete expense</button>
+  </div>
+</div>
+
+<!-- Travel mode: categories -->
+<div class="sheet-backdrop" id="tCatBackdrop">
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2>Trip categories</h2>
+    <div class="card" id="tCatList"></div>
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+      <label class="field" style="width:76px; flex:none; margin-bottom:0;"><span>Icon</span>
+        <input type="text" id="tCatIcon" maxlength="4" value="🏷️" style="text-align:center; font-size:15px;">
+      </label>
+      <label class="field" style="flex:1; margin-bottom:0;"><span>New category</span>
+        <input type="text" id="tCatName" placeholder="e.g. Coffee">
+      </label>
+    </div>
+    <button class="btn-primary" id="tCatAdd" style="margin-top:14px;">Add category</button>
+    <button class="btn-secondary" id="tCatDone">Done</button>
+  </div>
+</div>
+
 <!-- Confirm sheet (import / clear) -->
 <div class="sheet-backdrop" id="confirmBackdrop">
   <div class="sheet">
@@ -898,8 +1008,16 @@
     barbie:  { name: 'Barbie',  emoji: '💖' },
     island:  { name: 'Island Glow', emoji: '🏝️' }
   };
+  // In Travel mode the trip has its own theme (Island Glow by default); otherwise the regular app theme applies.
+  function themeKey(){
+    if (state && state.travel && state.travel.enabled) return THEMES[state.travel.theme] ? state.travel.theme : 'island';
+    return (state && THEMES[state.theme]) ? state.theme : 'default';
+  }
+  function setThemeKey(k){
+    if (state.travel && state.travel.enabled) state.travel.theme = k; else state.theme = k;
+  }
   function applyTheme(){
-    const t = (state && THEMES[state.theme]) ? state.theme : 'default';
+    const t = themeKey();
     if (t === 'default') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t);
   }
@@ -1000,6 +1118,18 @@
     if (!state.savingsGoals) state.savingsGoals = [];
     state.savingsGoals.forEach(g => { if (!g.frequency) g.frequency = 'weekly'; });
     if (!state.trackers) state.trackers = [];
+    if (!state.travel || typeof state.travel !== 'object') state.travel = {};
+    (function(tv){
+      tv.enabled = !!tv.enabled;
+      if (typeof tv.destination !== 'string') tv.destination = '';
+      if (!tv.emoji) tv.emoji = '🏝️';
+      if (typeof tv.start !== 'string') tv.start = '';
+      if (typeof tv.end !== 'string') tv.end = '';
+      if (!tv.currency) tv.currency = null;
+      if (!THEMES[tv.theme]) tv.theme = 'island';
+      if (!Array.isArray(tv.categories)) tv.categories = TRAVEL_DEFAULT_CATS.map(c => ({ id: uid(), name: c.name, icon: c.icon }));
+      if (!Array.isArray(tv.expenses)) tv.expenses = [];
+    })(state.travel);
     // migrate a single scalar income into a per-month map
     if (!state.incomeByMonth) {
       state.incomeByMonth = {};
@@ -1721,6 +1851,13 @@
   function render(){
     document.getElementById('brandName').textContent = state.ledgerName;
     document.title = state.ledgerName;
+    const travelOn = !!(state.travel && state.travel.enabled);
+    document.documentElement.classList.toggle('travel-on', travelOn);
+    if (travelOn) {
+      document.getElementById('main').innerHTML = renderTravel();
+      attachTravelListeners();
+      return;
+    }
     const vd = viewMonthDate();
     document.getElementById('monthLabel').textContent = MONTH_NAMES[vd.getMonth()] + ' ' + vd.getFullYear();
     const main = document.getElementById('main');
@@ -2008,8 +2145,9 @@
     setSettingsMsg('');
     const cur = CURRENCIES[state.currency] || CURRENCIES.USD;
     document.getElementById('setCurrencySub').innerHTML = (cur.html || cur.symbol) + '  ·  ' + cur.short;
-    const th = THEMES[state.theme] || THEMES.default;
+    const th = THEMES[themeKey()] || THEMES.default;
     document.getElementById('setThemeSub').textContent = th.emoji + '  ' + th.name;
+    syncTravelSettings();
     openSheet(settingsBackdrop);
   }
   document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
@@ -2157,12 +2295,12 @@
     const list = document.getElementById('themesList');
     list.innerHTML = Object.keys(THEMES).map(code => {
       const t = THEMES[code];
-      return `<button type="button" class="settings-row" data-theme-opt="${code}"><span><span class="cur-chip">${t.emoji}</span>${t.name}</span><i style="color:var(--accent);">${state.theme === code ? '✓' : ''}</i></button>`;
+      return `<button type="button" class="settings-row" data-theme-opt="${code}"><span><span class="cur-chip">${t.emoji}</span>${t.name}</span><i style="color:var(--accent);">${themeKey() === code ? '✓' : ''}</i></button>`;
     }).join('');
     list.querySelectorAll('[data-theme-opt]').forEach(b => b.addEventListener('click', () => {
-      state.theme = b.dataset.themeOpt;
+      setThemeKey(b.dataset.themeOpt);
       save(); applyTheme(); renderThemesList();
-      const th = THEMES[state.theme] || THEMES.default;
+      const th = THEMES[themeKey()] || THEMES.default;
       document.getElementById('setThemeSub').textContent = th.emoji + '  ' + th.name;
     }));
   }
@@ -2907,8 +3045,310 @@
     save(); closeSheet(trackerEntryBackdrop); expandedTrackerId = trackerEntrySourceId; render();
   });
 
+
+  // ---------- Travel mode ----------
+  const TRAVEL_DEFAULT_CATS = [
+    { name: 'Food', icon: '🍜' }, { name: 'Transportation', icon: '🚕' }, { name: 'Accommodation', icon: '🏨' },
+    { name: 'Shopping', icon: '🛍️' }, { name: 'Activities', icon: '🏄' }
+  ];
+  const TRAVEL_CURRENCIES = Object.assign({}, CURRENCIES, {
+    CAD: { symbol: 'C$',  name: 'Canadian dollar',     short: 'CAD' },
+    EUR: { symbol: '€',   name: 'Euro',                short: 'EUR' },
+    GBP: { symbol: '£',   name: 'British pound',       short: 'GBP' },
+    JPY: { symbol: '¥',   name: 'Japanese yen',        short: 'JPY' },
+    KRW: { symbol: '₩',   name: 'South Korean won',    short: 'KRW' },
+    THB: { symbol: '฿',   name: 'Thai baht',           short: 'THB' },
+    IDR: { symbol: 'Rp',  name: 'Indonesian rupiah',   short: 'IDR' },
+    VND: { symbol: '₫',   name: 'Vietnamese dong',     short: 'VND' },
+    SGD: { symbol: 'S$',  name: 'Singapore dollar',    short: 'SGD' },
+    MYR: { symbol: 'RM',  name: 'Malaysian ringgit',   short: 'MYR' },
+    HKD: { symbol: 'HK$', name: 'Hong Kong dollar',    short: 'HKD' },
+    AUD: { symbol: 'A$',  name: 'Australian dollar',   short: 'AUD' },
+    NZD: { symbol: 'NZ$', name: 'New Zealand dollar',  short: 'NZD' },
+    MXN: { symbol: 'MX$', name: 'Mexican peso',        short: 'MXN' }
+  });
+  const ZERO_DECIMAL = ['JPY', 'KRW', 'IDR', 'VND'];
+  let travelSel;        // undefined = auto (today while the trip is on), null = whole trip, or an ISO day
+  let travelCurSel = null;
+  let tEditId = null;
+
+  function travelCurrencyCode(){ const t = state.travel; return TRAVEL_CURRENCIES[t.currency] ? t.currency : (TRAVEL_CURRENCIES[state.currency] ? state.currency : 'USD'); }
+  function travelCur(){ return TRAVEL_CURRENCIES[travelCurrencyCode()]; }
+  function tfmtNum(n){
+    const d = ZERO_DECIMAL.includes(travelCurrencyCode()) ? 0 : 2;
+    return Math.abs(Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function tfmt(n){                                                      // HTML: for innerHTML only
+    const c = travelCur();
+    const sym = c.html || (escapeHtml(c.symbol) + (c.symbol.length > 1 ? '&nbsp;' : ''));
+    return (n < 0 ? '-' : '') + sym + tfmtNum(n);
+  }
+  function shortDate(iso){ return MONTH_NAMES[Number(iso.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(iso.slice(8, 10)); }
+  function tripDates(){
+    const t = state.travel;
+    return (t.start && t.end && t.end >= t.start) ? { start: t.start, end: t.end, n: daysBetween(t.start, t.end) + 1 } : null;
+  }
+  function tripRangeLabel(){
+    const t = state.travel;
+    if (!t.start) return 'Add your travel dates';
+    if (!t.end || t.end < t.start) return shortDate(t.start);
+    const y1 = t.start.slice(0, 4), y2 = t.end.slice(0, 4), cy = todayISO().slice(0, 4);
+    return shortDate(t.start) + (y1 !== y2 ? ', ' + y1 : '') + ' – ' + shortDate(t.end) + (y2 !== cy ? ', ' + y2 : '');
+  }
+
+  function renderTravel(){
+    const t = state.travel;
+    if (!t.destination) {
+      return `<div class="card t-setup">
+        <div class="t-emoji">✈️</div>
+        <div class="t-dest">Where to next?</div>
+        <p class="t-note">Add your destination and travel dates to start tracking what you spend on the trip.</p>
+        <button class="btn-primary" id="tSetupBtn">Set up trip</button>
+      </div>`;
+    }
+    const today = todayISO(), D = tripDates();
+    const total = t.expenses.reduce((s, e) => s + e.amount, 0);
+    let ongoing = false, over = false, before = false, dayNo = 0;
+    if (D) {
+      if (today < D.start) before = true;
+      else if (today > D.end) over = true;
+      else { ongoing = true; dayNo = daysBetween(D.start, today) + 1; }
+    }
+    const elapsed = ongoing ? dayNo : (over ? D.n : 0);
+    const avg = (D && elapsed > 0 && total > 0) ? ` · ≈${tfmt(total / elapsed)}/day average` : '';
+    const heroLabel = (over ? 'total' : 'so far') + avg;
+    const sel = travelSel === undefined ? (ongoing ? today : null) : travelSel;
+    travelCurSel = sel;
+
+    let html = `
+      <div class="t-head">
+        <span class="t-emoji">${escapeHtml(t.emoji || '🏝️')}</span>
+        <div style="min-width:0;">
+          <div class="t-dest">${escapeHtml(t.destination)}</div>
+          <div class="t-dates">${tripRangeLabel()}</div>
+        </div>
+        <button class="link-btn" id="tEditTrip">Edit</button>
+      </div>
+      <div class="stat-hero">
+        <div class="amount num">${tfmt(total)}</div>
+        <div class="label">${heroLabel}</div>
+      </div>`;
+
+    if (D) {
+      const perDay = {};
+      t.expenses.forEach(e => { perDay[e.date] = (perDay[e.date] || 0) + e.amount; });
+      const maxDay = Math.max(0, ...Object.values(perDay));
+      let strip = '';
+      for (let i = 0; i < D.n; i++) {
+        const iso = isoAdd(D.start, i), d = Number(iso.slice(8, 10)), amt = perDay[iso] || 0;
+        const h = amt > 0 ? Math.max(8, Math.round(amt / maxDay * 46)) : 3;
+        const mon = (i === 0 || d === 1) ? MONTH_NAMES[Number(iso.slice(5, 7)) - 1].slice(0, 3) : '';
+        strip += `<button type="button" class="t-day${iso === sel ? ' sel' : ''}${iso > today ? ' future' : ''}${iso === today ? ' today' : ''}" data-t-day="${iso}"><span class="bar-col"><span class="bar" style="height:${h}px"></span></span><span class="dn">${d}</span><small>${mon}</small></button>`;
+      }
+      const dayLabel = ongoing ? `Day ${dayNo} of ${D.n}`
+        : before ? `Starts in ${daysBetween(today, D.start)} day${daysBetween(today, D.start) === 1 ? '' : 's'} · ${D.n} days`
+        : `Trip ended · ${D.n} days`;
+      html += `<div class="t-daylabel">${dayLabel}</div><div class="t-strip" id="tStrip">${strip}</div>`;
+    }
+
+    const byCat = {};
+    t.expenses.forEach(e => { byCat[e.catId] = (byCat[e.catId] || 0) + e.amount; });
+    const maxCat = Math.max(0, ...t.categories.map(c => byCat[c.id] || 0));
+    html += `<div class="t-cats">` + t.categories.map(c => {
+      const a = byCat[c.id] || 0;
+      const h = 84 + (maxCat > 0 ? Math.round(a / maxCat * 116) : 0);
+      return `<button type="button" class="t-cat" data-t-cat="${c.id}" style="height:${h}px"><span class="e">${escapeHtml(c.icon)}</span><span class="a">${tfmt(a)}</span><span class="n">${escapeHtml(c.name)}</span></button>`;
+    }).join('') + `<button type="button" class="t-cat add" id="tAddCat" aria-label="Add or edit categories">+</button></div>`;
+
+    const list = t.expenses.filter(e => !sel || e.date === sel)
+      .sort((a, b) => b.date.localeCompare(a.date));
+    const selTotal = list.reduce((s, e) => s + e.amount, 0);
+    const selLabel = !sel ? 'All trip' : (sel === today ? 'Today' : shortDate(sel));
+    html += `<div class="t-listhead"><span class="t-sel">${selLabel}</span>${sel ? '<button class="link-btn" id="tShowAll">Show all</button>' : ''}<span class="t-seltotal">${tfmt(selTotal)}</span></div>`;
+    if (list.length === 0) {
+      html += `<div class="empty"><b>${sel ? 'Nothing logged ' + (sel === today ? 'today' : 'on ' + shortDate(sel)) + '.' : 'No expenses yet.'}</b><br>Tap a category above, or the + button, to log one.</div>`;
+    } else {
+      html += `<div class="card">`;
+      list.forEach(e => {
+        const cat = t.categories.find(c => c.id === e.catId);
+        html += `
+          <div class="tx-row">
+            ${cat ? `<span class="cat-icon">${escapeHtml(cat.icon)}</span>` : ''}
+            <div class="tx-main" data-t-edit="${e.id}" style="cursor:pointer;">
+              <div class="note">${escapeHtml(e.note || (cat ? cat.name : 'Expense'))}</div>
+              <div class="meta">${escapeHtml(cat ? cat.name : 'Uncategorised')} · ${shortDate(e.date)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="tx-amount">${tfmt(e.amount)}</div>
+              <button class="tx-del" data-t-del="${e.id}" aria-label="Delete">&times;</button>
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+    }
+    return html;
+  }
+
+  function attachTravelListeners(){
+    const on = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
+    const setup = document.getElementById('tSetupBtn'); if (setup) setup.addEventListener('click', openTripSheet);
+    const edit = document.getElementById('tEditTrip'); if (edit) edit.addEventListener('click', openTripSheet);
+    const showAll = document.getElementById('tShowAll'); if (showAll) showAll.addEventListener('click', () => { travelSel = null; render(); });
+    on('[data-t-day]', b => b.addEventListener('click', () => { travelSel = (travelCurSel === b.dataset.tDay) ? null : b.dataset.tDay; render(); }));
+    on('[data-t-cat]', b => b.addEventListener('click', () => openTravelExpSheet(b.dataset.tCat)));
+    const addCat = document.getElementById('tAddCat'); if (addCat) addCat.addEventListener('click', openTravelCatSheet);
+    on('[data-t-edit]', b => b.addEventListener('click', () => openTravelExpSheet(null, b.dataset.tEdit)));
+    on('[data-t-del]', b => b.addEventListener('click', () => confirmDeleteTravelExpense(b.dataset.tDel)));
+    const strip = document.getElementById('tStrip');
+    if (strip) {
+      const el = strip.querySelector('.sel') || strip.querySelector('.today');
+      if (el) strip.scrollLeft = Math.max(0, el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2);
+    }
+  }
+
+  function confirmDeleteTravelExpense(id){
+    const e = state.travel.expenses.find(x => x.id === id);
+    if (!e) return;
+    askConfirm('Delete this expense?', (e.note ? e.note + ' · ' : '') + tfmtText(e.amount), 'Delete', () => {
+      state.travel.expenses = state.travel.expenses.filter(x => x.id !== id);
+      save(); closeSheet(tExpBackdrop); render();
+    });
+  }
+  function tfmtText(n){
+    const c = travelCur();
+    return (n < 0 ? '-' : '') + c.symbol + (c.symbol.length > 1 ? '\u00A0' : '') + tfmtNum(n);
+  }
+
+  // settings: toggle + trip details row
+  function syncTravelSettings(){
+    const t = state.travel, on = !!t.enabled;
+    document.getElementById('travelToggle').classList.toggle('on', on);
+    document.getElementById('setTravelSub').textContent = on ? 'On · budgeting tabs are hidden until you turn it off' : 'Track spending on a trip';
+    const tripRow = document.getElementById('setTripRow');
+    tripRow.style.display = on ? '' : 'none';
+    document.getElementById('setTripSub').textContent = t.destination ? (t.emoji || '🏝️') + '  ' + t.destination + '  ·  ' + travelCurrencyCode() : 'Destination, dates and currency';
+    ['setBudgetRow', 'setMonthlyRow', 'setCurrencyRow'].forEach(id => { document.getElementById(id).style.display = on ? 'none' : ''; });
+  }
+  document.getElementById('setTravelRow').addEventListener('click', () => {
+    const t = state.travel;
+    t.enabled = !t.enabled;
+    if (t.enabled && !t.currency) t.currency = state.currency;
+    travelSel = undefined;
+    save(); applyTheme(); render(); syncTravelSettings();
+    const th = THEMES[themeKey()] || THEMES.default;
+    document.getElementById('setThemeSub').textContent = th.emoji + '  ' + th.name;
+    if (t.enabled && !t.destination) { closeSheet(settingsBackdrop); openTripSheet(); }
+  });
+  document.getElementById('setTripRow').addEventListener('click', () => { closeSheet(settingsBackdrop); openTripSheet(); });
+
+  // trip details sheet
+  const tripBackdrop = document.getElementById('tripBackdrop');
+  function openTripSheet(){
+    const t = state.travel;
+    document.getElementById('tripEmoji').value = t.emoji || '🏝️';
+    document.getElementById('tripDest').value = t.destination || '';
+    document.getElementById('tripStart').value = t.start || '';
+    document.getElementById('tripEnd').value = t.end || '';
+    const cur = travelCurrencyCode();
+    document.getElementById('tripCurrency').innerHTML = Object.keys(TRAVEL_CURRENCIES).map(code => {
+      const c = TRAVEL_CURRENCIES[code];
+      return `<option value="${code}"${code === cur ? ' selected' : ''}>${escapeHtml(c.symbol)}  ·  ${escapeHtml(c.name)} (${code})</option>`;
+    }).join('');
+    document.getElementById('tripMsg').textContent = '';
+    openSheet(tripBackdrop);
+  }
+  document.getElementById('tripCancel').addEventListener('click', () => closeSheet(tripBackdrop));
+  document.getElementById('tripSave').addEventListener('click', () => {
+    const msg = document.getElementById('tripMsg');
+    const dest = document.getElementById('tripDest').value.trim();
+    const start = document.getElementById('tripStart').value, end = document.getElementById('tripEnd').value;
+    if (!dest) { msg.textContent = 'Add where you are going.'; return; }
+    if (!!start !== !!end) { msg.textContent = 'Add both travel dates, or leave both empty.'; return; }
+    if (start && end < start) { msg.textContent = "The end date can't be before the start date."; return; }
+    const t = state.travel;
+    t.destination = dest;
+    t.emoji = document.getElementById('tripEmoji').value.trim() || '🏝️';
+    t.start = start; t.end = end;
+    t.currency = document.getElementById('tripCurrency').value;
+    travelSel = undefined;
+    save(); closeSheet(tripBackdrop); render();
+  });
+
+  // log / edit expense sheet
+  const tExpBackdrop = document.getElementById('tExpBackdrop');
+  function openTravelExpSheet(catId, expId){
+    const t = state.travel;
+    if (t.categories.length === 0) { openTravelCatSheet(); return; }
+    tEditId = expId || null;
+    const e = expId ? t.expenses.find(x => x.id === expId) : null;
+    if (expId && !e) return;
+    document.getElementById('tExpCat').innerHTML = t.categories.map(c => `<option value="${c.id}">${escapeHtml(c.icon)}  ${escapeHtml(c.name)}</option>`).join('');
+    document.getElementById('tExpCat').value = e ? e.catId : (catId || t.categories[0].id);
+    document.getElementById('tExpAmount').value = e ? e.amount : '';
+    document.getElementById('tExpNote').value = e ? (e.note || '') : '';
+    const D = tripDates(), today = todayISO();
+    let def = today;
+    if (D && today < D.start) def = D.start; else if (D && today > D.end) def = D.end;
+    document.getElementById('tExpDate').value = e ? e.date : def;
+    document.getElementById('tExpTitle').textContent = e ? 'Edit expense' : 'Log an expense';
+    document.getElementById('tExpSub').textContent = 'In ' + travelCur().name + ' (' + travelCurrencyCode() + ')';
+    document.getElementById('tExpDelete').style.display = e ? '' : 'none';
+    openSheet(tExpBackdrop);
+  }
+  document.getElementById('tExpCancel').addEventListener('click', () => closeSheet(tExpBackdrop));
+  document.getElementById('tExpDelete').addEventListener('click', () => { if (tEditId) confirmDeleteTravelExpense(tEditId); });
+  document.getElementById('tExpSave').addEventListener('click', () => {
+    const amount = parseFloat(document.getElementById('tExpAmount').value);
+    if (!amount || amount <= 0) return;
+    const rec = {
+      catId: document.getElementById('tExpCat').value,
+      amount,
+      note: document.getElementById('tExpNote').value.trim(),
+      date: document.getElementById('tExpDate').value || todayISO()
+    };
+    const t = state.travel;
+    if (tEditId) { const e = t.expenses.find(x => x.id === tEditId); if (e) Object.assign(e, rec); }
+    else t.expenses.push(Object.assign({ id: uid() }, rec));
+    save(); closeSheet(tExpBackdrop); render();
+  });
+
+  // categories sheet
+  const tCatBackdrop = document.getElementById('tCatBackdrop');
+  function renderTravelCatList(){
+    const t = state.travel;
+    document.getElementById('tCatList').innerHTML = t.categories.length === 0
+      ? `<div class="empty-mini">No categories yet. Add one below.</div>`
+      : t.categories.map(c => `<div class="manage-row"><span class="cat-icon">${escapeHtml(c.icon)}</span><span class="manage-name" style="flex:1;">${escapeHtml(c.name)}</span><button class="tx-del" data-t-delcat="${c.id}" aria-label="Delete category">&times;</button></div>`).join('');
+    document.querySelectorAll('[data-t-delcat]').forEach(b => b.addEventListener('click', () => {
+      const c = t.categories.find(x => x.id === b.dataset.tDelcat);
+      if (!c) return;
+      const n = t.expenses.filter(e => e.catId === c.id).length;
+      askConfirm('Delete ' + c.name + '?', n ? 'This also deletes the ' + n + ' expense' + (n === 1 ? '' : 's') + ' logged under it.' : 'This category has no expenses.', 'Delete', () => {
+        t.categories = t.categories.filter(x => x.id !== c.id);
+        t.expenses = t.expenses.filter(e => e.catId !== c.id);
+        save(); render(); renderTravelCatList(); openSheet(tCatBackdrop);
+      });
+    }));
+  }
+  function openTravelCatSheet(){
+    document.getElementById('tCatName').value = '';
+    document.getElementById('tCatIcon').value = '🏷️';
+    renderTravelCatList();
+    openSheet(tCatBackdrop);
+  }
+  document.getElementById('tCatDone').addEventListener('click', () => closeSheet(tCatBackdrop));
+  document.getElementById('tCatAdd').addEventListener('click', () => {
+    const name = document.getElementById('tCatName').value.trim();
+    if (!name) return;
+    state.travel.categories.push({ id: uid(), name, icon: document.getElementById('tCatIcon').value.trim() || '🏷️' });
+    document.getElementById('tCatName').value = '';
+    document.getElementById('tCatIcon').value = '🏷️';
+    save(); render(); renderTravelCatList();
+  });
+
   // ---------- FAB ----------
   document.getElementById('fabBtn').addEventListener('click', () => {
+    if (state.travel && state.travel.enabled) { openTravelExpSheet(); return; }
     if (activeTab === 'daily') openDailyCatManageSheet();
     else if (activeTab === 'budget') openCatSheet(null);
     else if (activeTab === 'bills') openBillSheet();
