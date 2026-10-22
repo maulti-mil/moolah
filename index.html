@@ -439,6 +439,14 @@
   .t-cat .a { font-size: 13px; font-weight: 600; }
   .t-cat .n { font-size: 11.5px; color: var(--text-dim); }
   .t-cat.add { flex: 0 0 56px; height: 84px; justify-content: center; background: transparent; border: 1.5px dashed rgba(124,122,125,0.45); font-size: 24px; color: var(--text-dim); }
+  .t-back { display: block; margin: 4px 0 0; padding: 4px 0; font-size: 13px; }
+  .t-emoji.sm { font-size: 32px; }
+  .t-trip { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; font-family: inherit; color: var(--text); cursor: pointer; }
+  .t-trip-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .t-trip-name { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t-trip-side { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .t-tag { font-size: 11px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--text-dim); }
+  .t-tag.current { background: var(--accent); color: var(--on-accent, #fff); font-weight: 600; }
   .t-listhead { display: flex; align-items: center; gap: 12px; margin: 16px 0 10px; }
   .t-sel { font-size: 15px; font-weight: 600; background: var(--surface-2); padding: 6px 14px; border-radius: 999px; }
   .t-seltotal { margin-left: auto; font-size: 15px; color: var(--text-dim); }
@@ -667,7 +675,7 @@
     <h2>Settings</h2>
     <div class="settings-group">
       <button type="button" class="settings-row" id="setTravelRow"><span>Travel mode<small id="setTravelSub">Track spending on a trip</small></span><span class="toggle-switch" id="travelToggle" style="display:block;"></span></button>
-      <button type="button" class="settings-row" id="setTripRow" style="display:none;"><span>Trip details<small id="setTripSub"></small></span><i>›</i></button>
+      <button type="button" class="settings-row" id="setTripRow" style="display:none;"><span>Your trips<small id="setTripSub"></small></span><i>›</i></button>
     </div>
     <div class="settings-group">
       <button type="button" class="settings-row" id="setBudgetRow"><span>Daily Expense Budget<small>Monthly limit for each daily category</small></span><i>›</i></button>
@@ -904,7 +912,7 @@
 <div class="sheet-backdrop" id="tripBackdrop">
   <div class="sheet">
     <div class="handle"></div>
-    <h2>Trip details</h2>
+    <h2 id="tripTitle">Trip details</h2>
     <div style="display:flex; gap:10px;">
       <label class="field" style="width:76px; flex:none;"><span>Icon</span>
         <input type="text" id="tripEmoji" maxlength="4" style="text-align:center; font-size:22px;">
@@ -923,6 +931,7 @@
     <div class="settings-msg" id="tripMsg"></div>
     <button class="btn-primary" id="tripSave">Save trip</button>
     <button class="btn-secondary" id="tripCancel">Cancel</button>
+    <button class="btn-danger-link" id="tripDelete" style="display:none;">Delete trip</button>
   </div>
 </div>
 
@@ -1121,14 +1130,27 @@
     if (!state.travel || typeof state.travel !== 'object') state.travel = {};
     (function(tv){
       tv.enabled = !!tv.enabled;
-      if (typeof tv.destination !== 'string') tv.destination = '';
-      if (!tv.emoji) tv.emoji = '🏝️';
-      if (typeof tv.start !== 'string') tv.start = '';
-      if (typeof tv.end !== 'string') tv.end = '';
-      if (!tv.currency) tv.currency = null;
       if (!THEMES[tv.theme]) tv.theme = 'island';
-      if (!Array.isArray(tv.categories)) tv.categories = TRAVEL_DEFAULT_CATS.map(c => ({ id: uid(), name: c.name, icon: c.icon }));
-      if (!Array.isArray(tv.expenses)) tv.expenses = [];
+      if (!Array.isArray(tv.trips)) tv.trips = [];
+      // earlier builds kept a single trip directly on state.travel: move it into the trips list
+      if (tv.destination || (Array.isArray(tv.expenses) && tv.expenses.length)) {
+        const old = { id: uid(), destination: tv.destination || '', emoji: tv.emoji, start: tv.start, end: tv.end,
+                      currency: tv.currency, categories: tv.categories, expenses: tv.expenses };
+        tv.trips.push(old);
+        tv.activeTripId = old.id;
+      }
+      ['destination','emoji','start','end','currency','categories','expenses'].forEach(k => { delete tv[k]; });
+      tv.trips.forEach(tr => {
+        if (!tr.id) tr.id = uid();
+        if (typeof tr.destination !== 'string') tr.destination = '';
+        if (!tr.emoji) tr.emoji = '🏝️';
+        if (typeof tr.start !== 'string') tr.start = '';
+        if (typeof tr.end !== 'string') tr.end = '';
+        if (!tr.currency) tr.currency = null;
+        if (!Array.isArray(tr.categories)) tr.categories = TRAVEL_DEFAULT_CATS.map(c => ({ id: uid(), name: c.name, icon: c.icon }));
+        if (!Array.isArray(tr.expenses)) tr.expenses = [];
+      });
+      if (!tv.trips.some(tr => tr.id === tv.activeTripId)) tv.activeTripId = null;
     })(state.travel);
     // migrate a single scalar income into a per-month map
     if (!state.incomeByMonth) {
@@ -3068,37 +3090,54 @@
     MXN: { symbol: 'MX$', name: 'Mexican peso',        short: 'MXN' }
   });
   const ZERO_DECIMAL = ['JPY', 'KRW', 'IDR', 'VND'];
-  let travelSel;        // undefined = auto (today while the trip is on), null = whole trip, or an ISO day
+  let travelSel;                 // undefined = auto (today while the trip is on), null = whole trip, or an ISO day
   let travelCurSel = null;
-  let tEditId = null;
+  let travelShowList = false;    // true = show the list of all trips instead of one trip's dashboard
+  let tEditId = null;            // expense being edited
+  let tripEditId = null;         // trip being edited (null = creating a new one)
 
-  function travelCurrencyCode(){ const t = state.travel; return TRAVEL_CURRENCIES[t.currency] ? t.currency : (TRAVEL_CURRENCIES[state.currency] ? state.currency : 'USD'); }
-  function travelCur(){ return TRAVEL_CURRENCIES[travelCurrencyCode()]; }
-  function tfmtNum(n){
-    const d = ZERO_DECIMAL.includes(travelCurrencyCode()) ? 0 : 2;
+  function trips(){ return state.travel.trips; }
+  function trip(){ const tv = state.travel; return tv.trips.find(x => x.id === tv.activeTripId) || null; }
+  function travelCurrencyCode(tr){
+    const c = (tr || trip() || {}).currency;
+    return TRAVEL_CURRENCIES[c] ? c : (TRAVEL_CURRENCIES[state.currency] ? state.currency : 'USD');
+  }
+  function travelCur(tr){ return TRAVEL_CURRENCIES[travelCurrencyCode(tr)]; }
+  function tfmtNum(n, tr){
+    const d = ZERO_DECIMAL.includes(travelCurrencyCode(tr)) ? 0 : 2;
     return Math.abs(Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
   }
-  function tfmt(n){                                                      // HTML: for innerHTML only
-    const c = travelCur();
+  function tfmt(n, tr){                                                  // HTML: for innerHTML only
+    const c = travelCur(tr);
     const sym = c.html || (escapeHtml(c.symbol) + (c.symbol.length > 1 ? '&nbsp;' : ''));
-    return (n < 0 ? '-' : '') + sym + tfmtNum(n);
+    return (n < 0 ? '-' : '') + sym + tfmtNum(n, tr);
+  }
+  function tfmtText(n, tr){
+    const c = travelCur(tr);
+    return (n < 0 ? '-' : '') + c.symbol + (c.symbol.length > 1 ? '\u00A0' : '') + tfmtNum(n, tr);
   }
   function shortDate(iso){ return MONTH_NAMES[Number(iso.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(iso.slice(8, 10)); }
-  function tripDates(){
-    const t = state.travel;
-    return (t.start && t.end && t.end >= t.start) ? { start: t.start, end: t.end, n: daysBetween(t.start, t.end) + 1 } : null;
+  function tripDates(tr){
+    tr = tr || trip();
+    return (tr && tr.start && tr.end && tr.end >= tr.start) ? { start: tr.start, end: tr.end, n: daysBetween(tr.start, tr.end) + 1 } : null;
   }
-  function tripRangeLabel(){
-    const t = state.travel;
-    if (!t.start) return 'Add your travel dates';
-    if (!t.end || t.end < t.start) return shortDate(t.start);
-    const y1 = t.start.slice(0, 4), y2 = t.end.slice(0, 4), cy = todayISO().slice(0, 4);
-    return shortDate(t.start) + (y1 !== y2 ? ', ' + y1 : '') + ' – ' + shortDate(t.end) + (y2 !== cy ? ', ' + y2 : '');
+  function tripRangeLabel(tr){
+    if (!tr.start) return 'No dates set';
+    if (!tr.end || tr.end < tr.start) return shortDate(tr.start);
+    const y1 = tr.start.slice(0, 4), y2 = tr.end.slice(0, 4), cy = todayISO().slice(0, 4);
+    return shortDate(tr.start) + (y1 !== y2 ? ', ' + y1 : '') + ' – ' + shortDate(tr.end) + (y2 !== cy ? ', ' + y2 : '');
+  }
+  function tripTotal(tr){ return tr.expenses.reduce((s, e) => s + e.amount, 0); }
+  function tripStatus(tr, today){
+    const D = tripDates(tr);
+    if (!D) return 'undated';
+    return today < D.start ? 'upcoming' : (today > D.end ? 'past' : 'current');
   }
 
-  function renderTravel(){
-    const t = state.travel;
-    if (!t.destination) {
+  // ----- trips list (past, current and future trips) -----
+  function renderTripList(){
+    const all = trips(), today = todayISO();
+    if (all.length === 0) {
       return `<div class="card t-setup">
         <div class="t-emoji">✈️</div>
         <div class="t-dest">Where to next?</div>
@@ -3106,8 +3145,37 @@
         <button class="btn-primary" id="tSetupBtn">Set up trip</button>
       </div>`;
     }
-    const today = todayISO(), D = tripDates();
-    const total = t.expenses.reduce((s, e) => s + e.amount, 0);
+    const groups = { current: [], upcoming: [], undated: [], past: [] };
+    all.forEach(tr => groups[tripStatus(tr, today)].push(tr));
+    groups.current.sort((a, b) => a.start.localeCompare(b.start));
+    groups.upcoming.sort((a, b) => a.start.localeCompare(b.start));
+    groups.past.sort((a, b) => b.start.localeCompare(a.start));
+    const card = tr => {
+      const st = tripStatus(tr, today), D = tripDates(tr);
+      const tag = st === 'current' ? 'On now'
+        : st === 'upcoming' ? 'In ' + daysBetween(today, D.start) + ' day' + (daysBetween(today, D.start) === 1 ? '' : 's')
+        : st === 'past' ? 'Done' : '';
+      return `<button type="button" class="card t-trip" data-t-open="${tr.id}">
+        <span class="t-emoji sm">${escapeHtml(tr.emoji || '🏝️')}</span>
+        <span class="t-trip-main"><span class="t-trip-name">${escapeHtml(tr.destination || 'Untitled trip')}</span><span class="t-dates">${tripRangeLabel(tr)}</span></span>
+        <span class="t-trip-side"><span class="tx-amount">${tfmt(tripTotal(tr), tr)}</span>${tag ? `<span class="t-tag ${st}">${tag}</span>` : ''}</span>
+      </button>`;
+    };
+    let html = `<div class="t-head"><div><div class="t-dest">Your trips</div><div class="t-dates">${all.length} trip${all.length === 1 ? '' : 's'}</div></div></div>`;
+    [['current', 'Happening now'], ['upcoming', 'Upcoming'], ['undated', 'No dates yet'], ['past', 'Past trips']].forEach(([k, label]) => {
+      if (!groups[k].length) return;
+      html += `<div class="section-title"><span>${label}</span></div>` + groups[k].map(card).join('');
+    });
+    html += `<button class="btn-primary" id="tNewTrip" style="margin-top:10px;">+ New trip</button>`;
+    return html;
+  }
+
+  // ----- one trip's dashboard -----
+  function renderTravel(){
+    const t = trip();
+    if (!t || travelShowList) return renderTripList();
+    const today = todayISO(), D = tripDates(t);
+    const total = tripTotal(t);
     let ongoing = false, over = false, before = false, dayNo = 0;
     if (D) {
       if (today < D.start) before = true;
@@ -3121,11 +3189,12 @@
     travelCurSel = sel;
 
     let html = `
+      <button class="link-btn t-back" id="tAllTrips">‹ All trips</button>
       <div class="t-head">
         <span class="t-emoji">${escapeHtml(t.emoji || '🏝️')}</span>
         <div style="min-width:0;">
-          <div class="t-dest">${escapeHtml(t.destination)}</div>
-          <div class="t-dates">${tripRangeLabel()}</div>
+          <div class="t-dest">${escapeHtml(t.destination || 'Untitled trip')}</div>
+          <div class="t-dates">${tripRangeLabel(t)}</div>
         </div>
         <button class="link-btn" id="tEditTrip">Edit</button>
       </div>
@@ -3160,8 +3229,7 @@
       return `<button type="button" class="t-cat" data-t-cat="${c.id}" style="height:${h}px"><span class="e">${escapeHtml(c.icon)}</span><span class="a">${tfmt(a)}</span><span class="n">${escapeHtml(c.name)}</span></button>`;
     }).join('') + `<button type="button" class="t-cat add" id="tAddCat" aria-label="Add or edit categories">+</button></div>`;
 
-    const list = t.expenses.filter(e => !sel || e.date === sel)
-      .sort((a, b) => b.date.localeCompare(a.date));
+    const list = t.expenses.filter(e => !sel || e.date === sel).sort((a, b) => b.date.localeCompare(a.date));
     const selTotal = list.reduce((s, e) => s + e.amount, 0);
     const selLabel = !sel ? 'All trip' : (sel === today ? 'Today' : shortDate(sel));
     html += `<div class="t-listhead"><span class="t-sel">${selLabel}</span>${sel ? '<button class="link-btn" id="tShowAll">Show all</button>' : ''}<span class="t-seltotal">${tfmt(selTotal)}</span></div>`;
@@ -3191,12 +3259,19 @@
 
   function attachTravelListeners(){
     const on = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
-    const setup = document.getElementById('tSetupBtn'); if (setup) setup.addEventListener('click', openTripSheet);
-    const edit = document.getElementById('tEditTrip'); if (edit) edit.addEventListener('click', openTripSheet);
-    const showAll = document.getElementById('tShowAll'); if (showAll) showAll.addEventListener('click', () => { travelSel = null; render(); });
+    const byId = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+    byId('tSetupBtn', () => openTripSheet(null));
+    byId('tNewTrip', () => openTripSheet(null));
+    byId('tEditTrip', () => openTripSheet(trip().id));
+    byId('tAllTrips', () => { travelShowList = true; render(); });
+    byId('tShowAll', () => { travelSel = null; render(); });
+    on('[data-t-open]', b => b.addEventListener('click', () => {
+      state.travel.activeTripId = b.dataset.tOpen; travelShowList = false; travelSel = undefined;
+      save(); render(); syncTravelSettings();
+    }));
     on('[data-t-day]', b => b.addEventListener('click', () => { travelSel = (travelCurSel === b.dataset.tDay) ? null : b.dataset.tDay; render(); }));
     on('[data-t-cat]', b => b.addEventListener('click', () => openTravelExpSheet(b.dataset.tCat)));
-    const addCat = document.getElementById('tAddCat'); if (addCat) addCat.addEventListener('click', openTravelCatSheet);
+    byId('tAddCat', openTravelCatSheet);
     on('[data-t-edit]', b => b.addEventListener('click', () => openTravelExpSheet(null, b.dataset.tEdit)));
     on('[data-t-del]', b => b.addEventListener('click', () => confirmDeleteTravelExpense(b.dataset.tDel)));
     const strip = document.getElementById('tStrip');
@@ -3205,56 +3280,65 @@
       if (el) strip.scrollLeft = Math.max(0, el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2);
     }
   }
+  function travelFab(){ if (trip() && !travelShowList) openTravelExpSheet(); else openTripSheet(null); }
 
   function confirmDeleteTravelExpense(id){
-    const e = state.travel.expenses.find(x => x.id === id);
+    const t = trip(), e = t && t.expenses.find(x => x.id === id);
     if (!e) return;
     askConfirm('Delete this expense?', (e.note ? e.note + ' · ' : '') + tfmtText(e.amount), 'Delete', () => {
-      state.travel.expenses = state.travel.expenses.filter(x => x.id !== id);
+      t.expenses = t.expenses.filter(x => x.id !== id);
       save(); closeSheet(tExpBackdrop); render();
     });
   }
-  function tfmtText(n){
-    const c = travelCur();
-    return (n < 0 ? '-' : '') + c.symbol + (c.symbol.length > 1 ? '\u00A0' : '') + tfmtNum(n);
-  }
 
-  // settings: toggle + trip details row
+  // ----- settings: toggle + trips row -----
   function syncTravelSettings(){
-    const t = state.travel, on = !!t.enabled;
+    const tv = state.travel, on = !!tv.enabled, t = trip();
     document.getElementById('travelToggle').classList.toggle('on', on);
     document.getElementById('setTravelSub').textContent = on ? 'On · budgeting tabs are hidden until you turn it off' : 'Track spending on a trip';
-    const tripRow = document.getElementById('setTripRow');
-    tripRow.style.display = on ? '' : 'none';
-    document.getElementById('setTripSub').textContent = t.destination ? (t.emoji || '🏝️') + '  ' + t.destination + '  ·  ' + travelCurrencyCode() : 'Destination, dates and currency';
+    document.getElementById('setTripRow').style.display = on ? '' : 'none';
+    const n = tv.trips.length;
+    document.getElementById('setTripSub').textContent = (n + ' trip' + (n === 1 ? '' : 's')) + (t ? '  ·  ' + (t.emoji || '🏝️') + ' ' + t.destination : '');
     ['setBudgetRow', 'setMonthlyRow', 'setCurrencyRow'].forEach(id => { document.getElementById(id).style.display = on ? 'none' : ''; });
   }
   document.getElementById('setTravelRow').addEventListener('click', () => {
-    const t = state.travel;
-    t.enabled = !t.enabled;
-    if (t.enabled && !t.currency) t.currency = state.currency;
-    travelSel = undefined;
+    const tv = state.travel;
+    tv.enabled = !tv.enabled;
+    if (tv.enabled) {
+      travelSel = undefined;
+      if (!trip()) {
+        const today = todayISO(), cur = tv.trips.find(x => tripStatus(x, today) === 'current');
+        if (cur) tv.activeTripId = cur.id;
+      }
+      travelShowList = !trip();
+    }
     save(); applyTheme(); render(); syncTravelSettings();
     const th = THEMES[themeKey()] || THEMES.default;
     document.getElementById('setThemeSub').textContent = th.emoji + '  ' + th.name;
-    if (t.enabled && !t.destination) { closeSheet(settingsBackdrop); openTripSheet(); }
+    if (tv.enabled && tv.trips.length === 0) { closeSheet(settingsBackdrop); openTripSheet(null); }
   });
-  document.getElementById('setTripRow').addEventListener('click', () => { closeSheet(settingsBackdrop); openTripSheet(); });
+  document.getElementById('setTripRow').addEventListener('click', () => {
+    closeSheet(settingsBackdrop); travelShowList = true; render();
+  });
 
-  // trip details sheet
+  // ----- trip details sheet (new or edit) -----
   const tripBackdrop = document.getElementById('tripBackdrop');
-  function openTripSheet(){
-    const t = state.travel;
-    document.getElementById('tripEmoji').value = t.emoji || '🏝️';
-    document.getElementById('tripDest').value = t.destination || '';
-    document.getElementById('tripStart').value = t.start || '';
-    document.getElementById('tripEnd').value = t.end || '';
-    const cur = travelCurrencyCode();
+  function openTripSheet(id){
+    tripEditId = id || null;
+    const tr = id ? trips().find(x => x.id === id) : null;
+    document.getElementById('tripTitle').textContent = tr ? 'Trip details' : 'New trip';
+    document.getElementById('tripEmoji').value = tr ? (tr.emoji || '🏝️') : '🏝️';
+    document.getElementById('tripDest').value = tr ? tr.destination : '';
+    document.getElementById('tripStart').value = tr ? tr.start : '';
+    document.getElementById('tripEnd').value = tr ? tr.end : '';
+    const last = trips()[trips().length - 1];
+    const cur = tr ? travelCurrencyCode(tr) : (last ? travelCurrencyCode(last) : travelCurrencyCode({}));
     document.getElementById('tripCurrency').innerHTML = Object.keys(TRAVEL_CURRENCIES).map(code => {
       const c = TRAVEL_CURRENCIES[code];
       return `<option value="${code}"${code === cur ? ' selected' : ''}>${escapeHtml(c.symbol)}  ·  ${escapeHtml(c.name)} (${code})</option>`;
     }).join('');
     document.getElementById('tripMsg').textContent = '';
+    document.getElementById('tripDelete').style.display = tr ? '' : 'none';
     openSheet(tripBackdrop);
   }
   document.getElementById('tripCancel').addEventListener('click', () => closeSheet(tripBackdrop));
@@ -3265,19 +3349,38 @@
     if (!dest) { msg.textContent = 'Add where you are going.'; return; }
     if (!!start !== !!end) { msg.textContent = 'Add both travel dates, or leave both empty.'; return; }
     if (start && end < start) { msg.textContent = "The end date can't be before the start date."; return; }
-    const t = state.travel;
-    t.destination = dest;
-    t.emoji = document.getElementById('tripEmoji').value.trim() || '🏝️';
-    t.start = start; t.end = end;
-    t.currency = document.getElementById('tripCurrency').value;
-    travelSel = undefined;
-    save(); closeSheet(tripBackdrop); render();
+    let tr = tripEditId ? trips().find(x => x.id === tripEditId) : null;
+    if (!tr) {
+      tr = { id: uid(), categories: TRAVEL_DEFAULT_CATS.map(c => ({ id: uid(), name: c.name, icon: c.icon })), expenses: [] };
+      trips().push(tr);
+    }
+    tr.destination = dest;
+    tr.emoji = document.getElementById('tripEmoji').value.trim() || '🏝️';
+    tr.start = start; tr.end = end;
+    tr.currency = document.getElementById('tripCurrency').value;
+    state.travel.activeTripId = tr.id;
+    travelShowList = false; travelSel = undefined;
+    save(); closeSheet(tripBackdrop); render(); syncTravelSettings();
+  });
+  document.getElementById('tripDelete').addEventListener('click', () => {
+    const tr = tripEditId && trips().find(x => x.id === tripEditId);
+    if (!tr) return;
+    const n = tr.expenses.length;
+    closeSheet(tripBackdrop);
+    askConfirm('Delete ' + (tr.destination || 'this trip') + '?',
+      'This removes the trip' + (n ? ' and its ' + n + ' expense' + (n === 1 ? '' : 's') : '') + ". It can't be undone.", 'Delete trip', () => {
+      state.travel.trips = trips().filter(x => x.id !== tr.id);
+      if (state.travel.activeTripId === tr.id) state.travel.activeTripId = null;
+      travelShowList = true; travelSel = undefined;
+      save(); render(); syncTravelSettings();
+    });
   });
 
-  // log / edit expense sheet
+  // ----- log / edit expense sheet -----
   const tExpBackdrop = document.getElementById('tExpBackdrop');
   function openTravelExpSheet(catId, expId){
-    const t = state.travel;
+    const t = trip();
+    if (!t) return;
     if (t.categories.length === 0) { openTravelCatSheet(); return; }
     tEditId = expId || null;
     const e = expId ? t.expenses.find(x => x.id === expId) : null;
@@ -3286,7 +3389,7 @@
     document.getElementById('tExpCat').value = e ? e.catId : (catId || t.categories[0].id);
     document.getElementById('tExpAmount').value = e ? e.amount : '';
     document.getElementById('tExpNote').value = e ? (e.note || '') : '';
-    const D = tripDates(), today = todayISO();
+    const D = tripDates(t), today = todayISO();
     let def = today;
     if (D && today < D.start) def = D.start; else if (D && today > D.end) def = D.end;
     document.getElementById('tExpDate').value = e ? e.date : def;
@@ -3299,23 +3402,24 @@
   document.getElementById('tExpDelete').addEventListener('click', () => { if (tEditId) confirmDeleteTravelExpense(tEditId); });
   document.getElementById('tExpSave').addEventListener('click', () => {
     const amount = parseFloat(document.getElementById('tExpAmount').value);
-    if (!amount || amount <= 0) return;
+    const t = trip();
+    if (!t || !amount || amount <= 0) return;
     const rec = {
       catId: document.getElementById('tExpCat').value,
       amount,
       note: document.getElementById('tExpNote').value.trim(),
       date: document.getElementById('tExpDate').value || todayISO()
     };
-    const t = state.travel;
     if (tEditId) { const e = t.expenses.find(x => x.id === tEditId); if (e) Object.assign(e, rec); }
     else t.expenses.push(Object.assign({ id: uid() }, rec));
     save(); closeSheet(tExpBackdrop); render();
   });
 
-  // categories sheet
+  // ----- categories sheet -----
   const tCatBackdrop = document.getElementById('tCatBackdrop');
   function renderTravelCatList(){
-    const t = state.travel;
+    const t = trip();
+    if (!t) return;
     document.getElementById('tCatList').innerHTML = t.categories.length === 0
       ? `<div class="empty-mini">No categories yet. Add one below.</div>`
       : t.categories.map(c => `<div class="manage-row"><span class="cat-icon">${escapeHtml(c.icon)}</span><span class="manage-name" style="flex:1;">${escapeHtml(c.name)}</span><button class="tx-del" data-t-delcat="${c.id}" aria-label="Delete category">&times;</button></div>`).join('');
@@ -3331,6 +3435,7 @@
     }));
   }
   function openTravelCatSheet(){
+    if (!trip()) return;
     document.getElementById('tCatName').value = '';
     document.getElementById('tCatIcon').value = '🏷️';
     renderTravelCatList();
@@ -3338,9 +3443,9 @@
   }
   document.getElementById('tCatDone').addEventListener('click', () => closeSheet(tCatBackdrop));
   document.getElementById('tCatAdd').addEventListener('click', () => {
-    const name = document.getElementById('tCatName').value.trim();
-    if (!name) return;
-    state.travel.categories.push({ id: uid(), name, icon: document.getElementById('tCatIcon').value.trim() || '🏷️' });
+    const t = trip(), name = document.getElementById('tCatName').value.trim();
+    if (!t || !name) return;
+    t.categories.push({ id: uid(), name, icon: document.getElementById('tCatIcon').value.trim() || '🏷️' });
     document.getElementById('tCatName').value = '';
     document.getElementById('tCatIcon').value = '🏷️';
     save(); render(); renderTravelCatList();
@@ -3348,7 +3453,7 @@
 
   // ---------- FAB ----------
   document.getElementById('fabBtn').addEventListener('click', () => {
-    if (state.travel && state.travel.enabled) { openTravelExpSheet(); return; }
+    if (state.travel && state.travel.enabled) { travelFab(); return; }
     if (activeTab === 'daily') openDailyCatManageSheet();
     else if (activeTab === 'budget') openCatSheet(null);
     else if (activeTab === 'bills') openBillSheet();
