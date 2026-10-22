@@ -18,7 +18,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #EDE7D6; --surface: #FFFFFF; --surface-2: #F7F1E3;
@@ -30,7 +30,7 @@
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+    :root:not([data-theme="light"]):not([data-theme="barbie"]):not([data-theme="island"]) {
       --bg: #12192B; --surface: #1B2440; --surface-2: #212C4C;
       --accent: #D8B872; --accent-soft: rgba(216,184,114,0.16);
       --good: #7FC79B; --good-soft: rgba(127,199,155,0.14);
@@ -339,6 +339,72 @@
   }
   .btn-danger-link { display:block; text-align:center; color: var(--bad); font-family: inherit; font-size: 13px; background:none; border:none; cursor:pointer; margin-top: 14px; }
 
+  :root[data-theme="island"] {
+    --bg: #F6EFEA;
+    --bg-grad: linear-gradient(165deg, #F8DFD3 0%, #F3EEEB 38%, #E2EFF8 100%);
+    --surface: rgba(255,255,255,0.72); --surface-2: rgba(255,255,255,0.55);
+    --sheet-bg: #FBF7F4;
+    --tile-grad: linear-gradient(180deg, #F8E4D9 0%, #F1ECE9 55%, #DDEEF9 100%);
+    --accent: #F6DF6F; --accent-soft: rgba(246,223,111,0.30); --accent-ink: #7A6200; --on-accent: #17171A;
+    --good: #3F9A72; --good-soft: rgba(63,154,114,0.14);
+    --bad: #D2574A; --bad-soft: rgba(210,87,74,0.14); --orange: #E98A3D;
+    --text: #17171A; --text-dim: #7C7A7D; --border: rgba(23,23,26,0.07);
+    --shadow: 0 2px 10px rgba(120,90,70,0.10);
+    color-scheme: light;
+  }
+
+  /* ===== Theme: Island Glow (peach-to-sky gradient, yellow accent, frosted rounded shapes) ===== */
+  :root[data-theme="island"] { background: var(--bg); }
+  :root[data-theme="island"] body { background: var(--bg-grad); background-attachment: fixed; min-height: 100%; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+  :root[data-theme="island"] input, :root[data-theme="island"] button, :root[data-theme="island"] select { font-family: inherit; }
+  :root[data-theme="island"] .num, :root[data-theme="island"] .tx-amount, :root[data-theme="island"] .stat-hero .breakdown span, :root[data-theme="island"] .cur-chip, :root[data-theme="island"] .cat-row .figures b, :root[data-theme="island"] .goal-card .figures b, :root[data-theme="island"] .tracker-card .figures b, :root[data-theme="island"] .budget-total b, :root[data-theme="island"] .excess-pending b, :root[data-theme="island"] .entries-total b, :root[data-theme="island"] .donut-legend .item b, :root[data-theme="island"] header.top .brand, :root[data-theme="island"] .sheet h2 { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+  :root[data-theme="island"] .num, :root[data-theme="island"] .tx-amount, :root[data-theme="island"] .stat-hero .breakdown span { font-weight: 800; letter-spacing: -0.2px; }
+  :root[data-theme="island"] header.top { padding-top: calc(18px + env(safe-area-inset-top)); }
+  :root[data-theme="island"] header.top .brand { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  :root[data-theme="island"] .month-nav .month { font-weight: 600; }
+  :root[data-theme="island"] .icon-btn { color: var(--text); }
+  :root[data-theme="island"] nav.tabs { background: var(--surface-2); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.6); border-radius: 999px; padding: 5px; box-shadow: var(--shadow); }
+  :root[data-theme="island"] nav.tabs button { border-radius: 999px; font-weight: 600; }
+  :root[data-theme="island"] nav.tabs button.active { background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: none; }
+  :root[data-theme="island"] .stat-hero .amount { font-size: 52px; font-weight: 800; letter-spacing: -2px; }
+  :root[data-theme="island"] .stat-hero .label { font-weight: 600; }
+  :root[data-theme="island"] .card, :root[data-theme="island"] .settings-group { background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.55); border-radius: 24px; box-shadow: var(--shadow); }
+  :root[data-theme="island"] .card { padding: 16px 18px; }
+  :root[data-theme="island"] .section-title { font-weight: 600; }
+  :root[data-theme="island"] .bar-track { height: 10px; border-radius: 999px; background: rgba(23,23,26,0.07); }
+  :root[data-theme="island"] .bar-fill { border-radius: 999px; }
+  :root[data-theme="island"] .link-btn { color: var(--accent-ink); font-weight: 700; }
+  :root[data-theme="island"] .settings-row i { color: var(--accent-ink) !important; }
+  :root[data-theme="island"] .tile-grid { gap: 12px; }
+  :root[data-theme="island"] .cat-tile { background: var(--tile-grad); border: 1px solid rgba(255,255,255,0.6); border-radius: 24px; min-height: 96px; font-weight: 700; box-shadow: none; }
+  :root[data-theme="island"] .cat-tile .tile-icon { width: 40px; height: 40px; background: transparent; font-size: 30px; border-radius: 0; }
+  :root[data-theme="island"] .cat-tile .tile-spent { font-weight: 700; color: var(--text); font-size: 12px; }
+  :root[data-theme="island"] .cat-tile.b-good, :root[data-theme="island"] .cat-tile.b-warn, :root[data-theme="island"] .cat-tile.b-low { box-shadow: none; border-width: 2px; }
+  :root[data-theme="island"] .cat-tile:active { background: var(--accent-soft); border-color: var(--accent); }
+  :root[data-theme="island"] .cat-icon { background: var(--tile-grad); border-radius: 50%; width: 30px; height: 30px; font-size: 15px; }
+  :root[data-theme="island"] .cal-cell { border-radius: 14px; }
+  :root[data-theme="island"] .cal-cell.today { background: var(--accent); color: var(--on-accent); font-weight: 800; }
+  :root[data-theme="island"] .cal-cell.bill-soon { background: var(--accent); color: var(--on-accent); }
+  :root[data-theme="island"] .cal-cell.bill-overdue, :root[data-theme="island"] .cal-cell.bill-paid { color: #fff; }
+  :root[data-theme="island"] .due-badge.soon { color: var(--accent-ink); }
+  :root[data-theme="island"] .chart-toggle { border-radius: 999px; }
+  :root[data-theme="island"] .chart-toggle button { border-radius: 999px; }
+  :root[data-theme="island"] .chart-toggle button.active { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+  :root[data-theme="island"] .seg button { border-radius: 999px; background: var(--surface-2); }
+  :root[data-theme="island"] .seg button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+  :root[data-theme="island"] .hint-note { border-radius: 16px; }
+  :root[data-theme="island"] .cat-row .period-tag, :root[data-theme="island"] .freq-tag { border-radius: 999px; }
+  :root[data-theme="island"] .toggle-switch { background: rgba(23,23,26,0.14); border: none; }
+  :root[data-theme="island"] .toggle-switch.on { background: var(--accent); }
+  :root[data-theme="island"] .toggle-switch.on::after { background: var(--on-accent); }
+  :root[data-theme="island"] .fab { width: 60px; height: 60px; background: var(--accent); color: var(--on-accent); font-size: 30px; font-weight: 500; box-shadow: 0 8px 22px rgba(190,160,40,0.35); }
+  :root[data-theme="island"] .btn-primary { background: var(--accent); color: var(--on-accent); border-radius: 999px; font-weight: 800; padding: 15px; }
+  :root[data-theme="island"] .btn-secondary { border-radius: 999px; padding: 14px; }
+  :root[data-theme="island"] .btn-danger { border-radius: 999px; }
+  :root[data-theme="island"] .sheet { background: var(--sheet-bg); border-radius: 30px 30px 0 0; }
+  :root[data-theme="island"] .sheet-backdrop.center-modal .sheet { border-radius: 28px; }
+  :root[data-theme="island"] .sheet h2 { font-weight: 800; font-size: 21px; letter-spacing: -0.3px; }
+  :root[data-theme="island"] input, :root[data-theme="island"] select { border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
   ::-webkit-scrollbar { display: none; }
 </style>
 </head>
@@ -832,7 +898,8 @@
   };
   const THEMES = {
     default: { name: 'Default', emoji: '🎨' },
-    barbie:  { name: 'Barbie',  emoji: '💖' }
+    barbie:  { name: 'Barbie',  emoji: '💖' },
+    island:  { name: 'Island Glow', emoji: '🏝️' }
   };
   function applyTheme(){
     const t = (state && THEMES[state.theme]) ? state.theme : 'default';
