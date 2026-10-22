@@ -447,6 +447,12 @@
   .t-trip-side { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
   .t-tag { font-size: 11px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--text-dim); }
   .t-tag.current { background: var(--accent); color: var(--on-accent, #fff); font-weight: 600; }
+  .t-summary { margin-top: 18px; }
+  .t-sum-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--text-dim); }
+  .t-sum-row + .t-sum-row { margin-top: 10px; }
+  .t-sum-row .tx-amount { color: var(--text); }
+  .t-sum-row.total { color: var(--text); font-weight: 600; font-size: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .t-sum-row.total .tx-amount { font-size: 19px; }
   .t-listhead { display: flex; align-items: center; gap: 12px; margin: 16px 0 10px; }
   .t-sel { font-size: 15px; font-weight: 600; background: var(--surface-2); padding: 6px 14px; border-radius: 999px; }
   .t-seltotal { margin-left: auto; font-size: 15px; color: var(--text-dim); }
@@ -3183,7 +3189,10 @@
       else { ongoing = true; dayNo = daysBetween(D.start, today) + 1; }
     }
     const elapsed = ongoing ? dayNo : (over ? D.n : 0);
-    const avg = (D && elapsed > 0 && total > 0) ? ` · ≈${tfmt(total / elapsed)}/day average` : '';
+    const isPre = e => !!D && e.date < D.start;                       // entered for a date before the trip starts
+    const preTotal = t.expenses.filter(isPre).reduce((s, e) => s + e.amount, 0);
+    const duringTotal = total - preTotal;
+    const avg = (D && elapsed > 0 && duringTotal > 0) ? ` · ≈${tfmt(duringTotal / elapsed)}/day average` : '';
     const heroLabel = (over ? 'total' : 'so far') + avg;
     const sel = travelSel === undefined ? (ongoing ? today : null) : travelSel;
     travelCurSel = sel;
@@ -3229,30 +3238,50 @@
       return `<button type="button" class="t-cat" data-t-cat="${c.id}" style="height:${h}px"><span class="e">${escapeHtml(c.icon)}</span><span class="a">${tfmt(a)}</span><span class="n">${escapeHtml(c.name)}</span></button>`;
     }).join('') + `<button type="button" class="t-cat add" id="tAddCat" aria-label="Add or edit categories">+</button></div>`;
 
-    const list = t.expenses.filter(e => !sel || e.date === sel).sort((a, b) => b.date.localeCompare(a.date));
-    const selTotal = list.reduce((s, e) => s + e.amount, 0);
-    const selLabel = !sel ? 'All trip' : (sel === today ? 'Today' : shortDate(sel));
-    html += `<div class="t-listhead"><span class="t-sel">${selLabel}</span>${sel ? '<button class="link-btn" id="tShowAll">Show all</button>' : ''}<span class="t-seltotal">${tfmt(selTotal)}</span></div>`;
-    if (list.length === 0) {
-      html += `<div class="empty"><b>${sel ? 'Nothing logged ' + (sel === today ? 'today' : 'on ' + shortDate(sel)) + '.' : 'No expenses yet.'}</b><br>Tap a category above, or the + button, to log one.</div>`;
+    const today2 = today;
+    const rowsHtml = list => `<div class="card">` + list.map(e => {
+      const cat = t.categories.find(c => c.id === e.catId);
+      return `
+        <div class="tx-row">
+          ${cat ? `<span class="cat-icon">${escapeHtml(cat.icon)}</span>` : ''}
+          <div class="tx-main" data-t-edit="${e.id}" style="cursor:pointer;">
+            <div class="note">${escapeHtml(e.note || (cat ? cat.name : 'Expense'))}</div>
+            <div class="meta">${escapeHtml(cat ? cat.name : 'Uncategorised')} · ${shortDate(e.date)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="tx-amount">${tfmt(e.amount)}</div>
+            <button class="tx-del" data-t-del="${e.id}" aria-label="Delete">&times;</button>
+          </div>
+        </div>`;
+    }).join('') + `</div>`;
+    const head = (label, tot, showAll) => `<div class="t-listhead"><span class="t-sel">${label}</span>${showAll ? '<button class="link-btn" id="tShowAll">Show all</button>' : ''}<span class="t-seltotal">${tfmt(tot)}</span></div>`;
+    const byDate = (a, b) => b.date.localeCompare(a.date);
+
+    if (sel) {
+      const list = t.expenses.filter(e => e.date === sel).sort(byDate);
+      html += head(sel === today2 ? 'Today' : shortDate(sel), list.reduce((s, e) => s + e.amount, 0), true);
+      html += list.length === 0
+        ? `<div class="empty"><b>Nothing logged ${sel === today2 ? 'today' : 'on ' + shortDate(sel)}.</b><br>Tap a category above, or the + button, to log one.</div>`
+        : rowsHtml(list);
+    } else if (t.expenses.length === 0) {
+      html += head('All trip', 0, false);
+      html += `<div class="empty"><b>No expenses yet.</b><br>Tap a category above, or the + button, to log one.</div>`;
     } else {
-      html += `<div class="card">`;
-      list.forEach(e => {
-        const cat = t.categories.find(c => c.id === e.catId);
-        html += `
-          <div class="tx-row">
-            ${cat ? `<span class="cat-icon">${escapeHtml(cat.icon)}</span>` : ''}
-            <div class="tx-main" data-t-edit="${e.id}" style="cursor:pointer;">
-              <div class="note">${escapeHtml(e.note || (cat ? cat.name : 'Expense'))}</div>
-              <div class="meta">${escapeHtml(cat ? cat.name : 'Uncategorised')} · ${shortDate(e.date)}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div class="tx-amount">${tfmt(e.amount)}</div>
-              <button class="tx-del" data-t-del="${e.id}" aria-label="Delete">&times;</button>
-            </div>
-          </div>`;
-      });
-      html += `</div>`;
+      const pre = t.expenses.filter(isPre).sort(byDate), during = t.expenses.filter(e => !isPre(e)).sort(byDate);
+      if (pre.length) {
+        html += head('Pre-trip', preTotal, false) + rowsHtml(pre);
+        html += head('During the trip', duringTotal, false);
+        html += during.length ? rowsHtml(during) : `<div class="empty-mini">Nothing logged during the trip yet.</div>`;
+      } else {
+        html += head('All trip', total, false) + rowsHtml(during);
+      }
+    }
+
+    if (t.expenses.length) {
+      html += `<div class="card t-summary">`
+        + (D ? `<div class="t-sum-row"><span>Pre-trip</span><span class="tx-amount">${tfmt(preTotal)}</span></div>
+                <div class="t-sum-row"><span>During the trip</span><span class="tx-amount">${tfmt(duringTotal)}</span></div>` : '')
+        + `<div class="t-sum-row total"><span>Total trip</span><span class="tx-amount">${tfmt(total)}</span></div></div>`;
     }
     return html;
   }
