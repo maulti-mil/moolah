@@ -3193,7 +3193,7 @@
     const preTotal = t.expenses.filter(isPre).reduce((s, e) => s + e.amount, 0);
     const duringTotal = total - preTotal;
     const avg = (D && elapsed > 0 && duringTotal > 0) ? ` · ≈${tfmt(duringTotal / elapsed)}/day average` : '';
-    const heroLabel = (over ? 'total' : 'so far') + avg;
+    const heroLabel = (D ? 'during the trip' : (over ? 'total' : 'so far')) + avg;
     const sel = travelSel === undefined ? (ongoing ? today : null) : travelSel;
     travelCurSel = sel;
 
@@ -3208,7 +3208,7 @@
         <button class="link-btn" id="tEditTrip">Edit</button>
       </div>
       <div class="stat-hero">
-        <div class="amount num">${tfmt(total)}</div>
+        <div class="amount num">${tfmt(D ? duringTotal : total)}</div>
         <div class="label">${heroLabel}</div>
       </div>`;
 
@@ -3269,9 +3269,9 @@
     } else {
       const pre = t.expenses.filter(isPre).sort(byDate), during = t.expenses.filter(e => !isPre(e)).sort(byDate);
       if (pre.length) {
-        html += head('Pre-trip', preTotal, false) + rowsHtml(pre);
         html += head('During the trip', duringTotal, false);
         html += during.length ? rowsHtml(during) : `<div class="empty-mini">Nothing logged during the trip yet.</div>`;
+        html += head('Pre-trip', preTotal, false) + rowsHtml(pre);
       } else {
         html += head('All trip', total, false) + rowsHtml(during);
       }
@@ -3279,8 +3279,8 @@
 
     if (t.expenses.length) {
       html += `<div class="card t-summary">`
-        + (D ? `<div class="t-sum-row"><span>Pre-trip</span><span class="tx-amount">${tfmt(preTotal)}</span></div>
-                <div class="t-sum-row"><span>During the trip</span><span class="tx-amount">${tfmt(duringTotal)}</span></div>` : '')
+        + (D ? `<div class="t-sum-row"><span>During the trip</span><span class="tx-amount">${tfmt(duringTotal)}</span></div>
+                <div class="t-sum-row"><span>Pre-trip</span><span class="tx-amount">${tfmt(preTotal)}</span></div>` : '')
         + `<div class="t-sum-row total"><span>Total trip</span><span class="tx-amount">${tfmt(total)}</span></div></div>`;
     }
     return html;
