@@ -1272,13 +1272,15 @@
   function dailySpentInMonth(catId, mk){
     return dailyExpensesFor(catId, mk).reduce((s,t) => s + t.amount, 0);
   }
-  // unused portion for a month: per enabled category with a budget, never negative
+  // net unused budget for a month: unspent amounts in budgeted categories minus overspend in others.
+  // The month's result never goes below zero (a month with net overspend simply has no excess).
   function dailyExcessForMonth(mk){
-    return state.dailyCategories.filter(c => c.enabled).reduce((sum,c) => {
+    const net = state.dailyCategories.filter(c => c.enabled).reduce((sum,c) => {
       const b = dailyBudgetFor(c, mk);
       if (b <= 0) return sum;
-      return sum + Math.max(0, b - dailySpentInMonth(c.id, mk));
+      return sum + (b - dailySpentInMonth(c.id, mk));
     }, 0);
+    return Math.max(0, net);
   }
   function monthHasDailyBudget(mk){
     return state.dailyCategories.some(c => c.enabled && dailyBudgetFor(c, mk) > 0);
@@ -1772,13 +1774,15 @@
     let h = `
       <div class="card tracker-card excess-card">
         <div class="row-top"><div class="name">Excess Budget YTD<span class="freq-tag">Auto</span></div></div>
-        <div class="figures"><b>${fmt(closed)}</b> unused from closed months in ${year}</div>`;
+        <div class="figures">${closed > 0 ? `<b>${fmt(closed)}</b> unused from closed months in ${year}` : `No excess from closed months in ${year}`}</div>`;
     if (rows.length === 0) {
       h += `<div class="excess-pending">Set monthly budgets under the gear icon, in Daily Expense Budget. Whatever you don't spend each month lands here automatically.</div></div>`;
       return h;
     }
     if (pending) {
-      h += `<div class="excess-pending">+ <b>${fmt(pending.amount)}</b> unspent so far this month. It counts once the month closes.</div>`;
+      h += pending.amount > 0
+        ? `<div class="excess-pending">+ <b>${fmt(pending.amount)}</b> unspent so far this month, after covering any overspend in other categories. It counts once the month closes.</div>`
+        : `<div class="excess-pending">No excess so far this month: overspending in some categories uses up what's unspent in others.</div>`;
     }
     h += `<div class="row-bottom"><button class="link-btn" data-toggle-excess="1">${expandedExcess ? 'Hide months' : 'View months (' + rows.length + ')'}</button></div>`;
     if (expandedExcess) {
@@ -1790,7 +1794,7 @@
               <div class="note">${r.label}</div>
               ${r.pending ? `<div class="meta">In progress, not counted yet</div>` : ''}
             </div>
-            <div class="tx-amount" ${r.pending ? 'style="color:var(--text-dim);"' : ''}>${fmt(r.amount)}</div>
+            <div class="tx-amount" ${r.pending || r.amount <= 0 ? 'style="color:var(--text-dim);"' : ''}>${r.amount > 0 ? fmt(r.amount) : 'No excess'}</div>
           </div>`;
       });
       h += `</div>`;
