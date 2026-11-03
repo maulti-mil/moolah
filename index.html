@@ -1005,7 +1005,7 @@
     {name:'Mobile Plan', icon:'📱'}, {name:'Insurance', icon:'🛡️'}
   ];
   const BUDGET_PRESETS = [
-    {name:'Investments', icon:'📈'}, {name:'Savings', icon:'💰'}, {name:'RRSP', icon:'🏦'},
+    {name:'Investments', icon:'📈'}, {name:'Savings', icon:'💰'}, {name:'RRSP', icon:'🏦'}, {name:'FHSA', icon:'🏡'},
     {name:'Rent', icon:'🏠'}, {name:'Credit Card', icon:'💳'}, {name:'Travel', icon:'✈️'},
     {name:'Insurance', icon:'🛡️'}, {name:'Gift', icon:'🎁'}
   ];
@@ -1105,6 +1105,13 @@
       DAILY_PRESETS.forEach(p => state.dailyCategories.push({ id: uid(), name: p.name, icon: p.icon, enabled: true }));
       BUDGET_PRESETS.forEach(p => state.budgetCategories.push({ id: uid(), name: p.name, icon: p.icon, budget: 0, period: 'monthly', overrides: {}, enabled: true }));
       state.seededDefaults = true;
+    }
+    // one-time: add the FHSA budget category for people whose defaults were seeded before it existed
+    if (!state.seededFhsa) {
+      if (!state.budgetCategories.some(c => /^fhsa$/i.test((c.name || '').trim()))) {
+        state.budgetCategories.push({ id: uid(), name: 'FHSA', icon: '🏡', budget: 0, period: 'monthly', overrides: {}, enabled: true });
+      }
+      state.seededFhsa = true;
     }
     state.dailyCategories.forEach(c => {
       if (typeof c.enabled !== 'boolean') c.enabled = true;
@@ -1381,7 +1388,7 @@
   // ---------- Savings category -> Savings tab link ----------
   // A spend logged on the Savings budget category can be mirrored into a savings goal (as a contribution) or a tracker (as an entry).
   // The category remembers the chosen destination (cat.savingsLink); each mirrored row carries spendId so deleting the spend removes it.
-  function isSavingsCategory(cat){ return !!cat && /^(savings?|investments?|rrsp)$/i.test((cat.name || '').trim()); }
+  function isSavingsCategory(cat){ return !!cat && /^(savings?|investments?|rrsp|fhsa)$/i.test((cat.name || '').trim()); }
   function savingsLinkValid(link){
     if (!link) return false;
     return link.type === 'goal' ? state.savingsGoals.some(g => g.id === link.id) : state.trackers.some(t => t.id === link.id);
@@ -2803,7 +2810,7 @@
     save(); closeSheet(spendBackdrop); expandedCatId = spendCatId; render();
   });
 
-  // "+ To savings" shortcut on Savings / Investments / RRSP: one entry that counts as a budget spend for the
+  // "+ To savings" shortcut on Savings / Investments / RRSP / FHSA: one entry that counts as a budget spend for the
   // category AND as a contribution to the chosen goal or tracker (same linking as the Add spend sheet)
   let catSavingsSourceCatId = null;
   function openCatSavingsSheet(catId){
